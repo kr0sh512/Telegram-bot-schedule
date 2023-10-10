@@ -5,6 +5,7 @@
         "last_name": "",
         "group": "102",
         "timeout": "12",
-        "allow_message": "yes"
+        "allow_message": "yes",
+        "thread": "General"
     }
 }
