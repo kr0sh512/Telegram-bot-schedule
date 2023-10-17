@@ -5,6 +5,8 @@ from telebot import types
 from telegram.constants import ParseMode
 import for_json
 
+import asyncio
+
 bot = telebot.TeleBot("TOKEN")
 admin_id = 'id'
 
@@ -63,7 +65,8 @@ def start(message):
                     temp
                 ]
                 if for_json.check_group_in_json(temp):
-                    bot.send_message(message.chat.id, 'Отлично! Теперь я буду присылать вам расписание {} группы'.format(temp), parse_mode='Markdown')
+                    bot.send_message(message.chat.id, \
+                        'Отлично! Теперь я буду присылать вам расписание {} группы'.format(temp), parse_mode='Markdown')
                 else:
                     bot.send_message(message.chat.id, 'Похоже, что расписания для этой группы ещё не существует. \
                         \nРазработчик уже пинается, но можете дополнительно написать ему: @Kr0sH\_512', parse_mode='Markdown')
@@ -229,18 +232,26 @@ def text_message(message):
     \nИспользуй команды из меню или напиши /help.', parse_mode='Markdown')
     return
 
-def send_message(id, text, thread_id='General'):
+async def send_message(id, text, thread_id='General'):
+    if thread_id == 'General':
+        thread_id = None
     bot.send_message(id, text, parse_mode=ParseMode.HTML, message_thread_id=thread_id)
     return
+
+def check_schedule():
+    while True:
+        schedule.run_pending()
+        time.sleep(5)
 
 if __name__ == '__main__':
     for_json.create_schedule_tasks()
     send_message(admin_id, '🛑 я перезапустился!')
     print("-------------------------")
     
+    bot.infinity_polling(skip_pending=True)
+    
+    threading.Thread(target=check_schedule, daemon=True).start()
+    
     # threading.Thread(target=bot.infinity_polling, name='bot_infinity_polling', daemon=True).start()
-    bot.polling(none_stop=True)
-
-    while True:
-        schedule.run_pending()
-        time.sleep(5)
+    #bot.polling(none_stop=True)
+    
