@@ -79,7 +79,7 @@ def create_schedule_tasks():
                             \n<b>{}</b>\
                             \n<i>{}</i>'.format(start, end, room, lesson["name"], teacher)
                 elif len(lesson["infos"].split('|')) == 4:
-                    infos = lesson["infos"].split('|');
+                    infos = lesson["infos"].split('|')
                     text = '{}-{}\
                             \n<b>{}</b>\
                             \n({}) <i>{}</i>\
