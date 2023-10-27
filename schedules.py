@@ -255,9 +255,15 @@ def text_message(message):
 def send_message(id, text, thread_id='General'):
     if thread_id == 'General':
         thread_id = None
-    bot.send_message(id, text, parse_mode=ParseMode.HTML, message_thread_id=thread_id)
+        
+    try:
+        bot.send_message(chat_id=id, text=text, parse_mode=ParseMode.HTML, message_thread_id=thread_id)
+    except Exception as e:
+        print(id, e)
+        text = '🛑 user:' + id + 'error.\n' + str(e)
+        bot.send_message(chat_id=admin_id, text=text, parse_mode=ParseMode.HTML, message_thread_id=thread_id)
     
-    return            
+    return
         
 
 if __name__ == '__main__':
