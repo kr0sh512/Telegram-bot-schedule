@@ -125,6 +125,7 @@ def check_group_in_json(number):
     schdl = {}
     with open(path_schedule, 'r', encoding='utf-8') as json_file: 
         schdl = json.load(json_file)    
+        
     return str(number) in schdl.keys()
 
 def return_infos(id):
@@ -134,5 +135,53 @@ def return_infos(id):
     data = data[id]
     text = '<i>Выбранная группа</i>: <b>{}</b>\
         \n<i>Время напоминания до урока</i>: <b>{}</b>\
-        \n<i>Разрешены ли напоминания</i>: <b>{}</b>'.format(data['group'], data['timeout'], ('да' if data['allow_message'] == 'yes' else 'нет'))
+        \n<i>Разрешены ли напоминания</i>: <b>{}</b>'.format((data['group'] if data['group'] != 'other' else 'не выбрана'), 
+                                                             data['timeout'], 
+                                                             ('да' if data['allow_message'] == 'yes' else 'нет'))
+        
+    return text
+
+def get_schedule(id):
+    text = '<u>Расписание на сегодня</u>:\n\n'
+
+    schdl_today = {}
+    with open(path_schedule, 'r', encoding='utf-8') as schedule_file: 
+        day = datetime.today().strftime('%A').lower()[:3]
+        
+        group = ''
+        with open(path_users, 'r', encoding='utf-8') as user_file: 
+            group = json.load(user_file)[id]['group']
+        
+        if (group == 'other'):
+            return 'У тебя не выбрана группа для рассылки сообщений'
+        
+        try:
+            schdl_today = json.load(schedule_file)[group][day]
+        except:
+            return 'Расписания твоей группы на сегодня нет'
+        
+    for i, lesson in schdl_today.items():
+        if len(lesson["infos"].split('|')) == 2:
+            teacher = lesson["infos"].split('|')[0]
+            room = lesson["infos"].split('|')[1]
+            text += '•{} | {}\
+                    \n<b>{}</b>\
+                    \n<i>{}</i>'.format(i, room, lesson["name"], teacher)
+                    
+        elif len(lesson["infos"].split('|')) == 4:
+            infos = lesson["infos"].split('|')
+            text += '•{}\
+                    \n<b>{}</b>\
+                    \n({}) <i>{}</i>\
+                    \n({}) <i>{}</i>'.format(i, lesson["name"], 
+                                            infos[1], 
+                                            infos[0], 
+                                            infos[3], 
+                                            infos[2])
+        else:
+            text += '•{}\
+                    \n<b>{}</b>'.format(i, lesson["name"])
+        
+        text += '\n\n'
+        
     return text
