@@ -284,8 +284,9 @@ def send_message(id, text, thread_id='General'):
     try:
         bot.send_message(chat_id=id, text=text, parse_mode=ParseMode.HTML, message_thread_id=thread_id)
     except Exception as e:
-        text = '🛑 user:' + id + 'error.\n' + str(e)
-        bot.send_message(admin_id, text, parse_mode=ParseMode.HTML, message_thread_id=thread_id)
+        text_error = '🛑 user:' + id + 'error.\n' + str(e)
+        bot.send_message(admin_id, text_error, parse_mode=ParseMode.HTML, message_thread_id=thread_id)
+        print(id, e)
         time.sleep(5)
         try:
             bot.send_message(chat_id=id, text=text, parse_mode=ParseMode.HTML, message_thread_id=thread_id)
