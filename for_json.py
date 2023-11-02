@@ -11,6 +11,7 @@ def save_user(infos):
         if type(infos[i]) == type(None):
             infos[i] = ''
         infos[i] = str(infos[i])
+        
     infos = {
         "id" :  infos[0], 
         "first_name" :  infos[1], 
@@ -39,6 +40,7 @@ def save_user(infos):
     return
 
 def change_user_param(id, key, value):
+    id = str(id)
     data = {}
     with open(path_users, 'r', encoding='utf-8') as json_file: 
         data = json.load(json_file)
@@ -117,7 +119,6 @@ def create_schedule_tasks():
                 elif day == 'sat':
                     schedule.every().saturday.at(start_task).do(bot.send_message, id, text, thread_id)
     
-    bot.send_message(bot.admin_id, '🛑 Произошёл update')
     return
 
 
@@ -129,19 +130,21 @@ def check_group_in_json(number):
     return str(number) in schdl.keys()
 
 def return_infos(id):
+    id = str(id)
     data = {}
     with open(path_users, 'r', encoding='utf-8') as json_file: 
         data = json.load(json_file)
     data = data[id]
-    text = '<i>Выбранная группа</i>: <b>{}</b>\
-        \n<i>Время напоминания до урока</i>: <b>{}</b>\
-        \n<i>Разрешены ли напоминания</i>: <b>{}</b>'.format((data['group'] if data['group'] != 'other' else 'не выбрана'), 
-                                                             data['timeout'], 
-                                                             ('да' if data['allow_message'] == 'yes' else 'нет'))
-        
-    return text
+    
+    return data
+
+def pause_bot():
+    schedule.clear()
+    
+    return
 
 def get_schedule(id):
+    id = str(id)
     text = '<u>Расписание на сегодня</u>:\n\n'
 
     schdl_today = {}
