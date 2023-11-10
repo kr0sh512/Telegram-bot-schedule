@@ -1,12 +1,13 @@
 #!/usr/bin/python3.3
-import threading, telebot, schedule, time
+import threading, telebot, schedule, time, re
+from datetime import datetime
 import os, sys
 from telebot import types
 from telegram.constants import ParseMode
 import for_json
 from admin import admin_command, is_admin, send_admin_message, send_admin_document
 
-bot = telebot.TeleBot("TOKEN_API")
+bot = telebot.TeleBot("6355753103:AAHWhA8nES_toURP0TWj8P0UNxtMrK8RaVI")
 
 start_txt = 'Привет! Это бот, который будет кидать тебе сообщения перед нужной парой с номером кабинета/фамилией препода\
     \n\nТы можешь настроить отправку сообщений в лс или добавить меня в группу, куда я буду присылать расписание\
@@ -29,7 +30,7 @@ def update_schedules(message):
 @bot.message_handler(commands=['update'])
 @admin_command
 def update_schedules(message):
-    for_json.create_schedule_tasks()
+    for_json.create_schedule_tasks(manual=True)
     send_admin_message('Произошёл update')
 
     return
@@ -89,7 +90,7 @@ def start(message):
                     temp
                 ]
                 
-                if for_json.check_group_in_json(temp):
+                if temp in for_json.groups_in_json():
                     send_message(message.chat.id,
                         'Отлично! Теперь я буду присылать вам расписание {} группы'.format(temp))
                 else:
@@ -109,16 +110,15 @@ def start(message):
     send_message(message.chat.id, start_txt)
     
     markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton(text="102", callback_data="102"))
-    markup.add(types.InlineKeyboardButton(text="103", callback_data="103"))
-    markup.add(types.InlineKeyboardButton(text="105", callback_data="105"))
-    markup.add(types.InlineKeyboardButton(text="110", callback_data="110"))
+    for i in for_json.groups_in_json():
+        markup.add(types.InlineKeyboardButton(text=i, callback_data=i))
     markup.add(types.InlineKeyboardButton(text="Моей группы нет в этом списке", callback_data="other"))
     bot.send_message(message.chat.id, 'Пожалуйста, выбери свою группу', parse_mode=ParseMode.HTML, reply_markup=markup)
     
     return
 
-@bot.callback_query_handler(func=lambda call: True)
+# @bot.callback_query_handler(func=lambda call: True)
+@bot.callback_query_handler(func=lambda call: not(call.data in ['left', 'right']))
 def callback_inline(call):
     infos = [
             call.from_user.id, 
@@ -208,10 +208,39 @@ def send_request(message):
 def send_schedule(message):
     text = 'К сожалению, бот не может отправить тебе расписание твоей группы на сегодня :('
     try:
-        text = for_json.get_schedule(str(message.chat.id))
+        day = datetime.today().strftime('%A').lower()[:3] # mon tue ...
+        text = for_json.get_schedule(message.chat.id, day)
     except Exception as e:
         send_admin_message('Schedule error from: {} \n\n {}'.format(message.chat.id, e))
-    send_message(message.chat.id, text)
+    
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton(text="◀️", callback_data="left"),
+               types.InlineKeyboardButton(text="▶️", callback_data="right"))
+    bot.send_message(message.chat.id, text, ParseMode.HTML, reply_markup=markup)
+    
+    return
+    
+@bot.callback_query_handler(func=lambda call: call.data in ['left', 'right'])
+def change_schedule(call):
+    days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat']
+    russian_days = ['понедельник', 'вторник', 'среду', 'четверг', 'пятницу', 'субботу']
+    i = 6 # выходной
+    for day in russian_days:
+        if day in call.message.text:
+            i = russian_days.index(day)
+            break
+    
+    delta = (1) if (call.data == 'right') else (-1)
+    ind = ((i + delta) % 6) if (i + delta > 0) else (i + delta)
+    
+    text = for_json.get_schedule(call.message.chat.id, days[ind])
+    
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton(text="◀️", callback_data="left"),
+               types.InlineKeyboardButton(text="▶️", callback_data="right"))
+    
+    bot.edit_message_text(text, call.message.chat.id, call.message.message_id, 
+                              parse_mode=ParseMode.HTML, reply_markup=markup)
     
     return
     
