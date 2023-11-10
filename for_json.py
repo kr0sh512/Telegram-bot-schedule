@@ -6,6 +6,8 @@ from datetime import datetime
 path_users = "json/users.json" # Нужный путь до json файлов
 path_schedule = "json/schedule.json"
 
+allow_update = True
+
 def save_user(infos):
     for i in range(len(infos)):
         if type(infos[i]) == type(None):
@@ -52,7 +54,44 @@ def change_user_param(id, key, value):
     create_schedule_tasks()
     return
 
-def create_schedule_tasks():
+def parse_lesson(time, lesson):
+    text = ''
+    start, end = time.split("-")
+    
+    if len(lesson["infos"].split('|')) == 2:
+        teacher = lesson["infos"].split('|')[0]
+        room = lesson["infos"].split('|')[1]
+        text = '{}-{} | {}\
+                \n<b>{}</b>\
+                \n<i>{}</i>'.format(start, end, room, lesson["name"], teacher)
+    elif len(lesson["infos"].split('|')) == 4:
+        infos = lesson["infos"].split('|')
+        text = '{}-{}\
+                \n<b>{}</b>\
+                \n({}) <i>{}</i>\
+                \n({}) <i>{}</i>'.format(start, end, lesson["name"], 
+                                        infos[1], 
+                                        infos[0], 
+                                        infos[3], 
+                                        infos[2])
+    elif len(lesson["infos"].split('|')) == 1:
+        text = '{}-{}\
+                \n<b>{}</b>'.format(start, end, lesson["name"])
+    else:
+        print("что-то не так")
+        print(lesson["name"])
+    
+    return text
+
+def create_schedule_tasks(manual=False):
+    global allow_update
+    if not manual:
+        bot.send_admin_message('Произошёл auto-update')
+        if not allow_update:
+            return
+    
+    allow_update = True
+    
     schedule.clear()
     users = {}
     schdl = {}
@@ -72,33 +111,14 @@ def create_schedule_tasks():
                 if lesson["name"] == "": # Неправильный формат schedule
                     continue
                 
-                start, end = i.split("-")
-                text = ''
-                if len(lesson["infos"].split('|')) == 2:
-                    teacher = lesson["infos"].split('|')[0]
-                    room = lesson["infos"].split('|')[1]
-                    text = '{}-{} | {}\
-                            \n<b>{}</b>\
-                            \n<i>{}</i>'.format(start, end, room, lesson["name"], teacher)
-                elif len(lesson["infos"].split('|')) == 4:
-                    infos = lesson["infos"].split('|')
-                    text = '{}-{}\
-                            \n<b>{}</b>\
-                            \n({}) <i>{}</i>\
-                            \n({}) <i>{}</i>'.format(start, end, lesson["name"], 
-                                                   infos[1], 
-                                                   infos[0], 
-                                                   infos[3], 
-                                                   infos[2])
-                elif len(lesson["infos"].split('|')) == 1:
-                    text = '{}-{}\
-                            \n<b>{}</b>'.format(start, end, lesson["name"])
-                else:                  #неправильный формат infos в json файле
-                    print("что-то не так")
-                    print(lesson["name"])
+                start = i.split("-")[0]
+                text = parse_lesson(i, lesson)
+                
+                if text == '':
                     continue
                 
                 thread_id = params["thread"]
+                
                 delta = '00:' + params["timeout"]
                 format = '%H:%M'
                 start_task = datetime.strptime(start, format) - datetime.strptime(delta, format)
@@ -106,6 +126,7 @@ def create_schedule_tasks():
                 for i in str(start_task).split(':'):
                     tmp += (('0' + i ) if len(i) < 2 else i) + ":"
                 start_task = tmp[:-1]
+                
                 if day == 'mon':
                     schedule.every().monday.at(start_task).do(bot.send_message, id, text, thread_id)
                 elif day == 'tue':
@@ -121,13 +142,12 @@ def create_schedule_tasks():
     
     return
 
-
-def check_group_in_json(number):
+def groups_in_json():
     schdl = {}
     with open(path_schedule, 'r', encoding='utf-8') as json_file: 
-        schdl = json.load(json_file)    
+        schdl = json.load(json_file)
         
-    return str(number) in schdl.keys()
+    return schdl.keys()
 
 def return_infos(id):
     id = str(id)
@@ -140,17 +160,20 @@ def return_infos(id):
 
 def pause_bot():
     schedule.clear()
+    global allow_update
+    allow_update = False
     
     return
 
-def get_schedule(id):
+def get_schedule(id, day):
     id = str(id)
-    text = '<u>Расписание на сегодня</u>:\n\n'
+    days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat']
+    russian_days = ['понедельник', 'вторник', 'среду', 'четверг', 'пятницу', 'субботу']
+    
+    text = '<u>Расписание на {}</u>:\n\n'.format(russian_days[days.index(day)])
 
     schdl_today = {}
     with open(path_schedule, 'r', encoding='utf-8') as schedule_file: 
-        day = datetime.today().strftime('%A').lower()[:3]
-        
         group = ''
         with open(path_users, 'r', encoding='utf-8') as user_file: 
             group = json.load(user_file)[id]['group']
@@ -161,30 +184,9 @@ def get_schedule(id):
         try:
             schdl_today = json.load(schedule_file)[group][day]
         except:
-            return 'Расписания твоей группы на сегодня нет'
+            return 'Расписания твоей группы на {} нет'.format(russian_days[days.index(day)])
         
     for i, lesson in schdl_today.items():
-        if len(lesson["infos"].split('|')) == 2:
-            teacher = lesson["infos"].split('|')[0]
-            room = lesson["infos"].split('|')[1]
-            text += '•{} | {}\
-                    \n<b>{}</b>\
-                    \n<i>{}</i>'.format(i, room, lesson["name"], teacher)
-                    
-        elif len(lesson["infos"].split('|')) == 4:
-            infos = lesson["infos"].split('|')
-            text += '•{}\
-                    \n<b>{}</b>\
-                    \n({}) <i>{}</i>\
-                    \n({}) <i>{}</i>'.format(i, lesson["name"], 
-                                            infos[1], 
-                                            infos[0], 
-                                            infos[3], 
-                                            infos[2])
-        else:
-            text += '•{}\
-                    \n<b>{}</b>'.format(i, lesson["name"])
-        
-        text += '\n\n'
+        text += '•' + parse_lesson(i, lesson) + '\n\n'
         
     return text
