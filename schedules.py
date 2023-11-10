@@ -1,5 +1,5 @@
 #!/usr/bin/python3.3
-import threading, telebot, schedule, time, re
+import threading, telebot, schedule, time
 from datetime import datetime
 import os, sys
 from telebot import types
