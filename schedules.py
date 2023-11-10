@@ -7,7 +7,7 @@ from telegram.constants import ParseMode
 import for_json
 from admin import admin_command, is_admin, send_admin_message, send_admin_document
 
-bot = telebot.TeleBot("TELEBOT_API")
+bot = telebot.TeleBot("TOKEN_API")
 
 start_txt = 'Привет! Это бот, который будет кидать тебе сообщения перед нужной парой с номером кабинета/фамилией препода\
     \n\nТы можешь настроить отправку сообщений в лс или добавить меня в группу, куда я буду присылать расписание\
