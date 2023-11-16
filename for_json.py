@@ -167,6 +167,8 @@ def pause_bot():
 
 def get_schedule(id, day):
     id = str(id)
+    if day == 'sun':
+        day = 'mon'
     days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat']
     russian_days = ['понедельник', 'вторник', 'среду', 'четверг', 'пятницу', 'субботу']
     

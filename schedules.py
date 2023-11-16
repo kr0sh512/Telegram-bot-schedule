@@ -9,9 +9,36 @@ from admin import admin_command, is_admin, send_admin_message, send_admin_docume
 
 bot = telebot.TeleBot("TOKEN_API")
 
-start_txt = 'Привет! Это бот, который будет кидать тебе сообщения перед нужной парой с номером кабинета/фамилией препода\
-    \n\nТы можешь настроить отправку сообщений в лс или добавить меня в группу, куда я буду присылать расписание\
-\n\nCreated by: @Kr0sH_512'
+
+
+@bot.message_handler(commands=['help', 'faq'])
+def help(message):
+    help_msg = 'Мои команды:\
+            \n/start - используй, чтобы сменить номер группы.\
+            \n/schedule - используй, чтобы получить расписание на сегодня.\
+            \n/info - используй, чтобы узнать твои настройки бота\
+            \n/pause - используй, чтобы прекратить получать сообщения от бота\
+            \n/thread - используй в нужном чате канала, чтобы бот отправлял сообщения именно туда\
+            \n/timeout - настрой время, когда бот будет присылать тебе сообщение\
+            \n/request - используй, чтобы отправить разработчику какой-то запрос\
+            \n/source - Страница бота на Github\
+            \n\nИли же можно всегда написать напрямую: @Kr0sH_512'
+            
+    send_message(message.chat.id, help_msg)
+    
+    if is_admin(message):
+        admin_help_msg = 'И команды только для админа:\
+            \n/restart - перезапуск бота.\
+            \n/update - обновление schedule задач\
+            \n/json - получить файл пользователей и расписания\
+            \n/info <i>id_пользователя</i> - узнать настройки пользователя\
+            \n/pause_all - приостановить бота для всех (каникулы/выходные)\
+            \n/stop <i>id_пользователя</i> - приостановить отправку сообщений для пользователя'
+        send_admin_message(admin_help_msg)
+        
+    return
+
+### --//--
 
 @bot.message_handler(commands=['test'])
 @admin_command
@@ -27,6 +54,12 @@ def update_schedules(message):
 
     return
 
+@bot.message_handler(commands=['restart'])
+@admin_command
+def restart_bot(message):
+    send_admin_message('bye')
+    os.execv(sys.executable, ['python'] + sys.argv)
+
 @bot.message_handler(commands=['update'])
 @admin_command
 def update_schedules(message):
@@ -34,12 +67,6 @@ def update_schedules(message):
     send_admin_message('Произошёл update')
 
     return
-
-@bot.message_handler(commands=['restart'])
-@admin_command
-def restart_bot(message):
-    send_admin_message('bye')
-    os.execv(sys.executable, ['python'] + sys.argv)
             
 @bot.message_handler(commands=['json'])
 @admin_command
@@ -50,6 +77,8 @@ def send_json(message):
         send_admin_document(json_file)
             
     return
+
+# info user_id
 
 @bot.message_handler(commands=['pause_all'])
 @admin_command
@@ -68,10 +97,14 @@ def pause_bot(message):
     for_json.change_user_param(str(message.text).split(' ')[1], 'allow_message', 'no')
     send_admin_message('Успешно')
     return
-        
+
+### --//--    
 
 @bot.message_handler(commands=['start'])
 def start(message):
+    start_txt = 'Привет! Это бот, который будет кидать тебе сообщения перед нужной парой с номером кабинета/фамилией препода\
+    \n\nТы можешь настроить отправку сообщений в лс или добавить меня в группу, куда я буду присылать расписание\
+\n\nCreated by: @Kr0sH_512'
     if message.chat.type == "supergroup":        
         if len(message.text.split(' ')) != 2:
             send_message(message.chat.id, start_txt)
@@ -117,7 +150,6 @@ def start(message):
     
     return
 
-# @bot.callback_query_handler(func=lambda call: True)
 @bot.callback_query_handler(func=lambda call: not(call.data in ['left', 'right']))
 def callback_inline(call):
     infos = [
@@ -145,65 +177,8 @@ def callback_inline(call):
         
     return
 
-@bot.message_handler(commands=['help', 'faq'])
-def help(message):
-    help_msg = 'Мои команды:\
-            \n/start - используй, чтобы сменить номер группы.\
-            \n/schedule - используй, чтобы получить расписание на сегодня.\
-            \n/info - используй, чтобы узнать твои настройки бота\
-            \n/pause - используй, чтобы прекратить получать сообщения от бота\
-            \n/thread - используй в нужном чате канала, чтобы бот отправлял сообщения именно туда\
-            \n/timeout - настрой время, когда бот будет присылать тебе сообщение\
-            \n/request - используй, чтобы отправить разработчику какой-то запрос\
-            \n/source - Страница бота на Github\
-            \n\nИли же можно всегда написать напрямую: @Kr0sH_512'
-            
-    send_message(message.chat.id, help_msg)
-    
-    if is_admin(message):
-        admin_help_msg = 'И команды только для админа:\
-            \n/restart - перезапуск бота.\
-            \n/update - обновление schedule задач\
-            \n/json - получить файл пользователей и расписания\
-            \n/info <i>id_пользователя</i> - узнать настройки пользователя\
-            \n/pause_all - приостановить бота для всех (каникулы/выходные)\
-            \n/stop <i>id_пользователя</i> - приостановить отправку сообщений для пользователя'
-        send_admin_message(admin_help_msg)
-        
-    return
-    
-@bot.message_handler(commands=['request'])
-def request(message):
-    send_message(message.from_user.id, 'Отправь мне сообщение и я перешлю его разработчику\
-        \n(или напиши stop, чтобы отменить отправку)')
-    bot.register_next_step_handler(message, send_request)
-    
-    return
-    
-def send_request(message):
-    if message.text == "stop" or message.text == "стоп" or message.text[0] == '/':
-        send_message(message.from_user.id, 'Отмена отпраки')
-        return
-    
-    infos = [
-        message.from_user.id, 
-        message.from_user.first_name, 
-        message.from_user.last_name, 
-        message.from_user.username,
-        message.text
-    ]
-    
-    for i in range(len(infos)):
-        if type(infos[i]) == type(None):
-            infos[i] = ''
-    
-    admin_text = 'Сообщение от {} {} (@{}):\n\n{}\nid: {}'.format(infos[1], infos[2], infos[3], infos[4], infos[0])
-    send_admin_message(admin_text)
-    
-    send_message(message.from_user.id, 'Ваше сообщение успешно доставлено!')
-    
-    return
-    
+
+
 @bot.message_handler(commands=['schedule'])
 def send_schedule(message):
     text = 'К сожалению, бот не может отправить тебе расписание твоей группы на сегодня :('
@@ -243,28 +218,9 @@ def change_schedule(call):
                               parse_mode=ParseMode.HTML, reply_markup=markup)
     
     return
-    
-@bot.message_handler(commands=['timeout'])
-def set_timeout(message):
-    send_message(message.chat.id, 'Пришли мне число от 1 до 60. \
-        \nЭто будет количество минут, за которое я буду присылать тебе напоминание о уроке (По умолчанию: 10)')
-    bot.register_next_step_handler(message, save_timeout)
-    
-    return
 
-def save_timeout(message):
-    if str(message.text).isdigit() and int(message.text) <= 60 and int(message.text) >= 1:
-        for_json.change_user_param(message.chat.id, 'timeout', str(message.text))
-        send_message(message.chat.id, 
-                         'Хорошо, теперь ты будешь получать напоминания за {} минут до урока'.format(str(message.text)))
-    else:
-        send_message(message.chat.id, 
-                         'Пожалуйста, пришли <u>число</u> от 1 до 60. \
-                        \nПо умолчанию: 10')
-        send_message(message.chat.id, 'Изменения не были внесены')
-        
-    return
-    
+
+
 @bot.message_handler(commands=['info'])
 def send_info(message):
     if len(message.text.split(' ')) == 2 and is_admin(message):
@@ -291,13 +247,25 @@ def send_info(message):
     send_message(message.chat.id, text)
     
     return
+
+
+
+@bot.message_handler(commands=['pause'])
+def pause_schedule(message):
+    infos = for_json.return_infos(message.chat.id)['allow_message']
     
-@bot.message_handler(commands=['source'])
-def send_source(message):
-    bot.send_message(message.chat.id, 'https://github.com/kr0sh512/Telegram-bot-schedule', parse_mode=ParseMode.HTML)
+    if infos == 'yes':
+        for_json.change_user_param(str(message.chat.id), 'allow_message', 'no')
+        send_message(message.chat.id, 'Рассылка сообщений преращена. \
+            \nДля возобновления воспользуйтесь командой\n/pause')
+    else:
+        for_json.change_user_param(str(message.chat.id), 'allow_message', 'yes')
+        send_message(message.chat.id, 'Рассылка сообщений возоблена!')
     
     return
     
+    
+     
 @bot.message_handler(commands=['thread'])
 def change_thread(message):
     thread_id = ''
@@ -312,16 +280,74 @@ def change_thread(message):
     send_message(message.chat.id, 'Хорошо, теперь я буду отправлять сообщения в этот чат', thread_id)
     
     return
+
+
+
+@bot.message_handler(commands=['timeout'])
+def set_timeout(message):
+    send_message(message.chat.id, 'Пришли мне число от 1 до 60. \
+        \nЭто будет количество минут, за которое я буду присылать тебе напоминание о уроке (По умолчанию: 10)')
+    bot.register_next_step_handler(message, save_timeout)
     
-@bot.message_handler(commands=['pause'])
-def pause_schedule(message):
-    for_json.change_user_param(str(message.chat.id), 'allow_message', 'no')
-    
-    send_message(message.chat.id, 'Рассылка сообщений преращена. \
-        \nДля возобновления воспользуйтесь командой\n/start')
+    return
+
+def save_timeout(message):
+    if str(message.text).isdigit() and int(message.text) <= 60 and int(message.text) >= 1:
+        for_json.change_user_param(message.chat.id, 'timeout', str(message.text))
+        send_message(message.chat.id, 
+                         'Хорошо, теперь ты будешь получать напоминания за {} минут до урока'.format(str(message.text)))
+    else:
+        send_message(message.chat.id, 
+                         'Пожалуйста, пришли <u>число</u> от 1 до 60. \
+                        \nПо умолчанию: 10')
+        send_message(message.chat.id, 'Изменения не были внесены')
+        
+    return
+
+
+
+@bot.message_handler(commands=['request'])
+def request(message):
+    send_message(message.from_user.id, 'Отправь мне сообщение и я перешлю его разработчику\
+        \n(или напиши stop, чтобы отменить отправку)')
+    bot.register_next_step_handler(message, send_request)
     
     return
     
+def send_request(message):
+    if message.text == "stop" or message.text == "стоп" or message.text[0] == '/':
+        send_message(message.from_user.id, 'Отмена отпраки')
+        return
+    
+    infos = [
+        message.from_user.id, 
+        message.from_user.first_name, 
+        message.from_user.last_name, 
+        message.from_user.username,
+        message.text
+    ]
+    
+    for i in range(len(infos)):
+        if type(infos[i]) == type(None):
+            infos[i] = ''
+    
+    admin_text = 'Сообщение от {} {} (@{}):\n\n{}\nid: {}'.format(infos[1], infos[2], infos[3], infos[4], infos[0])
+    send_admin_message(admin_text)
+    
+    send_message(message.from_user.id, 'Ваше сообщение успешно доставлено!')
+    
+    return
+
+
+    
+@bot.message_handler(commands=['source'])
+def send_source(message):
+    bot.send_message(message.chat.id, 'https://github.com/kr0sh512/Telegram-bot-schedule', parse_mode=ParseMode.HTML)
+    
+    return
+
+    
+
 @bot.message_handler(content_types=['text'])
 def text_message(message):
     if message.chat.type == "supergroup":
@@ -330,6 +356,8 @@ def text_message(message):
     \nИспользуй команды из меню или напиши /help.')
     
     return
+
+
 
 def send_message(id, text, thread_id='General'):
     if thread_id == 'General':
@@ -361,6 +389,8 @@ def send_document(id, file, text = ''):
             print(id, e)
     
     return
+
+
 
 if __name__ == '__main__':
     for_json.create_schedule_tasks()
