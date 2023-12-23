@@ -5,8 +5,17 @@ from datetime import datetime
 
 path_users = "json/users.json" # Нужный путь до json файлов
 path_schedule = "json/schedule.json"
+path_students = "json/students.json"
+# path_logs = "json/logs.json"
 
 allow_update = True
+
+# Возможно разбиение добавление логов на 2 функции: Распарсирование message/call
+# 2) добавление самого текста в json
+
+# def add_logs(logs): # TODO: реализация добавления логов
+#     pass
+#     return
 
 def save_user(infos):
     for i in range(len(infos)):
@@ -39,6 +48,15 @@ def save_user(infos):
     with open(path_users, 'w', encoding='utf-8') as json_file:
         json.dump(data, json_file, ensure_ascii=False, indent=4)
     create_schedule_tasks()
+    bot.send_admin_message("Новый пользователь:\
+                          \n<i>user:</i> @{}\
+                          \n<i>group:</i> <code>{}</code>\
+                          \n<i>id:</i> <code>{}</code>\
+                          \n<i>name:</i> <code>{}</code>".format(data[infos["id"]]["username"], 
+                                                               data[infos["id"]]["group"], 
+                                                               infos["id"],
+                                                               data[infos["id"]]["first_name"] + data[infos["id"]]["last_name"]))
+                                                        
     return
 
 def change_user_param(id, key, value):
@@ -52,6 +70,11 @@ def change_user_param(id, key, value):
     with open(path_users, 'w', encoding='utf-8') as json_file:
         json.dump(data, json_file, ensure_ascii=False, indent=4)
     create_schedule_tasks()
+    bot.send_admin_message("Изменения:\
+                          \n<i>user:</i> @{}\
+                          \n<i>id:</i> <code>{}</code>\
+                          \n<i>key:</i> <code>{}</code>\
+                          \n<i>value:</i> <code>{}</code>".format(data[id]["username"], id, key, value))
     return
 
 def parse_lesson(time, lesson):
@@ -149,6 +172,28 @@ def groups_in_json():
         
     return schdl.keys()
 
+def students_in_json(id="", key=""):
+    id = str(id)
+    
+    group = {}
+    with open(path_users, 'r', encoding='utf-8') as json_file: 
+        group = json.load(json_file)
+    group = group[id]["group"]
+    
+    stud = {}
+    with open(path_students, 'r', encoding='utf-8') as json_file: 
+        stud = json.load(json_file)
+    stud = stud.get(group)
+    
+    if stud == None:
+        return None
+    
+    if key == "":
+        return list(stud.keys())
+    
+    return stud[key]
+
+
 def return_infos(id):
     id = str(id)
     data = {}
@@ -159,9 +204,15 @@ def return_infos(id):
     return data
 
 def pause_bot():
-    schedule.clear()
     global allow_update
-    allow_update = False
+    if allow_update:
+        schedule.clear()
+        allow_update = False
+        bot.send_admin_message('Бот больше не отправляет расписание')
+    else:
+        create_schedule_tasks(True)
+        allow_update = True
+        bot.send_admin_message('Бот возобновил рассылку!')
     
     return
 

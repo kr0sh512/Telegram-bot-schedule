@@ -1,5 +1,5 @@
 #!/usr/bin/python3.3
-import threading, telebot, schedule, time
+import threading, telebot, schedule, time, random
 from datetime import datetime
 import os, sys
 from telebot import types
@@ -7,15 +7,27 @@ from telegram.constants import ParseMode
 import for_json
 from admin import admin_command, is_admin, send_admin_message, send_admin_document
 
-bot = telebot.TeleBot("TOKEN_API")
+# bot = telebot.TeleBot("TOKEN_API")
+bot = telebot.TeleBot("6240513112:AAFccyClvWsSNtVsZgNWAKFaNTs2-0y__pw")
+# bot = telebot.TeleBot("6355753103:AAFPzya37HNjBEKnv83fqWbyXX6Bhe52DR4")
 
+# def log(func):
+#     def wrapper(*args, **kwargs):
+#         message = args[0]
+        
+#         for_json.add_log(message)
 
+#         func(*args, **kwargs)
+#         return
+
+#     return wrapper
 
 @bot.message_handler(commands=['help', 'faq'])
 def help(message):
     help_msg = 'Мои команды:\
             \n/start - используй, чтобы сменить номер группы.\
             \n/schedule - используй, чтобы получить расписание на сегодня.\
+            \n/random - сделай очередь из людей\
             \n/info - используй, чтобы узнать твои настройки бота\
             \n/pause - используй, чтобы прекратить получать сообщения от бота\
             \n/thread - используй в нужном чате канала, чтобы бот отправлял сообщения именно туда\
@@ -40,19 +52,19 @@ def help(message):
 
 ### --//--
 
-@bot.message_handler(commands=['test'])
-@admin_command
-def update_schedules(message):
-    text = '<b>Жирный текст</b>\
-        \n<i>Курсивный текст</i>\
-        \n<s>Перечёркнутый текст</s>\
-        \n<a href="google.com">Ссылка</a>\
-        \n<code>Моноширинный текст</code>\
-        \n<pre>Форматированный с сохранением     пробелов</pre>\
-        \n<blockquote>Цитата</blockquote>'
-    send_admin_message(text)
+# @bot.message_handler(commands=['test'])
+# @admin_command
+# def update_schedules(message):
+#     text = '<b>Жирный текст</b>\
+#         \n<i>Курсивный текст</i>\
+#         \n<s>Перечёркнутый текст</s>\
+#         \n<a href="google.com">Ссылка</a>\
+#         \n<code>Моноширинный текст</code>\
+#         \n<pre>Форматированный с сохранением     пробелов</pre>\
+#         \n<blockquote>Цитата</blockquote>'
+#     send_admin_message(text)
 
-    return
+#     return
 
 @bot.message_handler(commands=['restart'])
 @admin_command
@@ -75,6 +87,8 @@ def send_json(message):
         send_admin_document(json_file)
     with open(for_json.path_schedule, 'rb') as json_file: 
         send_admin_document(json_file)
+    with open(for_json.path_students, 'rb') as json_file: 
+        send_admin_document(json_file)
             
     return
 
@@ -84,8 +98,7 @@ def send_json(message):
 @admin_command
 def pause_bot(message):
     for_json.pause_bot()
-    send_admin_message('Бот больше не отправляет расписание')
-    
+        
     return
 
 @bot.message_handler(commands=['stop'])
@@ -145,12 +158,13 @@ def start(message):
     markup = types.InlineKeyboardMarkup()
     for i in for_json.groups_in_json():
         markup.add(types.InlineKeyboardButton(text=i, callback_data=i))
+    
     markup.add(types.InlineKeyboardButton(text="Моей группы нет в этом списке", callback_data="other"))
     bot.send_message(message.chat.id, 'Пожалуйста, выбери свою группу', parse_mode=ParseMode.HTML, reply_markup=markup)
     
     return
 
-@bot.callback_query_handler(func=lambda call: not(call.data in ['left', 'right']))
+@bot.callback_query_handler(func=lambda call: call.data in for_json.groups_in_json() or call.data == "other")
 def callback_inline(call):
     infos = [
             call.from_user.id, 
@@ -221,6 +235,55 @@ def change_schedule(call):
 
 
 
+@bot.message_handler(commands=['random'])
+def random_people(message):
+    list_of_num = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6", "7", "8", "9"]
+    
+    list_of_var = for_json.students_in_json(message.chat.id)
+    
+    text = 'Для вашей группы эта команда не настроена.\n\nНапиши запрос через /request'
+    
+    if list_of_var == None:
+        send_message(message.chat.id, text)
+        send_admin_message('Запрос на random команду от {}'.format(
+            for_json.return_infos(message.chat.id)["group"]))
+        
+        return
+    
+    text = '• Выбери как именно мне перемешать вас:\n'
+    
+    l = []
+    for i, val in enumerate(list_of_var):
+        text += '\n{} {}'.format(list_of_num[i], val)
+        l.append(types.InlineKeyboardButton(text=list_of_num[i], callback_data=val))
+        
+    l = [l]
+    
+    markup = types.InlineKeyboardMarkup(l)
+    bot.send_message(message.chat.id, text, ParseMode.HTML, reply_markup=markup)
+    
+    return
+
+@bot.callback_query_handler(func=lambda call: not(call.data in ['left', 'right'] 
+                                                  or call.data in for_json.groups_in_json() or call.data == "other"))
+def make_random(call):
+    list_of_stud = for_json.students_in_json(call.message.chat.id, call.data)
+    
+    random.shuffle(list_of_stud)
+    
+    text = '<b><u>{}</u></b>:\n\n'.format(call.data)
+    
+    for i, name in enumerate(list_of_stud):
+        text +=  '<code>{}{}</code>. {}\n'.format(' ' if i + 1 < 10 else '', i + 1, name)
+    
+    bot.edit_message_text('Хорошо, вот ваше распределение!', call.message.chat.id, 
+                          call.message.message_id, parse_mode=ParseMode.HTML)
+    
+    send_message(call.message.chat.id, text)
+    
+    return
+
+    
 @bot.message_handler(commands=['info'])
 def send_info(message):
     if len(message.text.split(' ')) == 2 and is_admin(message):
@@ -393,7 +456,7 @@ def send_document(id, file, text = ''):
 
 
 if __name__ == '__main__':
-    for_json.create_schedule_tasks()
+    for_json.create_schedule_tasks(True)
 
     send_admin_message('Я перезапустился!')
     print("-------------------------")
