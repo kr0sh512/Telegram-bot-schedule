@@ -8,8 +8,6 @@ import for_json
 from admin import admin_command, is_admin, send_admin_message, send_admin_document
 
 # bot = telebot.TeleBot("TOKEN_API")
-bot = telebot.TeleBot("6240513112:AAFccyClvWsSNtVsZgNWAKFaNTs2-0y__pw")
-# bot = telebot.TeleBot("6355753103:AAFPzya37HNjBEKnv83fqWbyXX6Bhe52DR4")
 
 # def log(func):
 #     def wrapper(*args, **kwargs):
@@ -42,8 +40,10 @@ def help(message):
         admin_help_msg = 'И команды только для админа:\
             \n/restart - перезапуск бота.\
             \n/update - обновление schedule задач\
+            \n/stats - получание статистики\
             \n/json - получить файл пользователей и расписания\
             \n/info <i>id_пользователя</i> - узнать настройки пользователя\
+            \n/spam - сделать рассылку\
             \n/pause_all - приостановить бота для всех (каникулы/выходные)\
             \n/stop <i>id_пользователя</i> - приостановить отправку сообщений для пользователя'
         send_admin_message(admin_help_msg)
@@ -57,6 +57,7 @@ def help(message):
 # def update_schedules(message):
 #     text = '<b>Жирный текст</b>\
 #         \n<i>Курсивный текст</i>\
+#         \n<u>Подчёркнутый</u>\
 #         \n<s>Перечёркнутый текст</s>\
 #         \n<a href="google.com">Ссылка</a>\
 #         \n<code>Моноширинный текст</code>\
@@ -79,7 +80,38 @@ def update_schedules(message):
     send_admin_message('Произошёл update')
 
     return
-            
+
+@bot.message_handler(commands=['stats'])
+@admin_command
+def send_stat(message):
+    text = "<u>Статистика:</u>\
+        \n(группа: всего/откл. увед./беседы)"
+    
+    sum_users = 0
+    sum_dis_not = 0
+    sum_chats = 0
+    
+    groups = list(for_json.groups_in_json())
+    groups.append("other")
+    
+    for i in groups:
+        users = for_json.students_in_group(i)
+        sum_users += len(users)
+        
+        dis_not = len([i for i, x in enumerate(users) if for_json.return_infos(x)["allow_message"] == "no"])
+        sum_dis_not += dis_not
+        
+        chats = len([i for i, x in enumerate(users) if x[0] == "-"])
+        sum_chats += chats
+        
+        text += "\n{}: {} / {} / {}".format(i, len(users), dis_not, chats)
+    
+    text += "\n\nВсего: {} / {} / {}".format(sum_users, sum_dis_not, sum_chats)
+    
+    send_admin_message(text)
+    
+    return
+
 @bot.message_handler(commands=['json'])
 @admin_command
 def send_json(message):
@@ -93,6 +125,85 @@ def send_json(message):
     return
 
 # info user_id
+
+@bot.message_handler(commands=['spam'])
+@admin_command
+def spam(message):
+    send_admin_message("Пришли мне id, номер группы или <i>all</i> для рассылки сообщения этим пользователям")
+    
+    bot.register_next_step_handler(message, spam_msg)
+    
+    return
+
+def spam_msg(message):
+    if message.text == "stop" or message.text == "стоп" or message.text[0] == '/':
+        send_admin_message('Отмена отпраки')
+        return
+    
+    send_admin_message("Пришли мне текст для рассылки сообщения этим пользователям")
+    
+    bot.register_next_step_handler(message, spam_cnf, message.text)
+    
+    return
+
+def spam_cnf(message, data):
+    if message.text == "stop" or message.text == "стоп" or message.text[0] == '/':
+        send_admin_message('Отмена отпраки')
+        return
+    
+    text = "Пожалуйста, проверь итоговое сообщение и подтверди отправку:\
+        \n\nКому: "
+    
+    if data == "all":
+        text += "<u>всем</u>"
+    elif data in for_json.groups_in_json():
+        text += "{} группе".format(data)
+    elif for_json.return_infos(data) != None:
+        text += "пользователю @{}".format(for_json.return_infos(data)["username"])
+    else:
+        send_admin_message("Ошибка при выборе пользователей")
+        return
+    
+    text +="\n\nСообщение: " + message.text
+    
+    markup = types.InlineKeyboardMarkup()
+    
+    markup.add(types.InlineKeyboardButton(text="✅", callback_data="spam#{}#{}".format(data, message.text)), 
+               types.InlineKeyboardButton(text="❌", callback_data="spam_no"))
+    
+    bot.send_message(message.from_user.id, text, parse_mode=ParseMode.HTML, reply_markup=markup)
+    
+    return
+
+@bot.callback_query_handler(func=lambda call: "spam" in call.data)
+def spam_send(call):
+    if call.data == "spam_no":
+        send_admin_message('Отмена отпраки')
+        return
+    
+    tmp, data, text = call.data.split("#")
+    
+    users = []
+    
+    if data == "all":
+        groups = for_json.groups_in_json()
+        for group in groups:
+            users += for_json.students_in_group(group)
+        users += for_json.students_in_group("other")
+    elif data in for_json.groups_in_json():
+        users = for_json.students_in_group(data)
+    elif for_json.return_infos(data) != None:
+        users = [data]
+    
+    for i in users:
+        send_message(i, text)
+        
+    bot.edit_message_text(chat_id=call.message.chat.id,
+                              message_id=call.message.message_id, 
+                              text='Успешно!', 
+                              parse_mode=ParseMode.HTML)
+    
+    return
 
 @bot.message_handler(commands=['pause_all'])
 @admin_command
@@ -255,7 +366,7 @@ def random_people(message):
     l = []
     for i, val in enumerate(list_of_var):
         text += '\n{} {}'.format(list_of_num[i], val)
-        l.append(types.InlineKeyboardButton(text=list_of_num[i], callback_data=val))
+        l.append(types.InlineKeyboardButton(text=list_of_num[i], callback_data="rand#" + val))
         
     l = [l]
     
@@ -264,14 +375,13 @@ def random_people(message):
     
     return
 
-@bot.callback_query_handler(func=lambda call: not(call.data in ['left', 'right'] 
-                                                  or call.data in for_json.groups_in_json() or call.data == "other"))
+@bot.callback_query_handler(func=lambda call: "rand#" in call.data)
 def make_random(call):
-    list_of_stud = for_json.students_in_json(call.message.chat.id, call.data)
+    list_of_stud = for_json.students_in_json(call.message.chat.id, call.data.split("#")[1])
     
     random.shuffle(list_of_stud)
     
-    text = '<b><u>{}</u></b>:\n\n'.format(call.data)
+    text = '<b><u>{}</u></b>:\n\n'.format(call.data.split("#")[1])
     
     for i, name in enumerate(list_of_stud):
         text +=  '<code>{}{}</code>. {}\n'.format(' ' if i + 1 < 10 else '', i + 1, name)
@@ -413,7 +523,7 @@ def send_source(message):
 
 @bot.message_handler(content_types=['text'])
 def text_message(message):
-    if message.chat.type == "supergroup":
+    if message.chat.type == "supergroup" or is_admin(message):
         return
     send_message(message.from_user.id, 'К сожалению, я ещё не умею обрабатывать сообщения.\
     \nИспользуй команды из меню или напиши /help.')
@@ -422,9 +532,19 @@ def text_message(message):
 
 
 
-def send_message(id, text, thread_id='General'):
+def send_message(id, text, thread_id='General', distribution=False):
     if thread_id == 'General':
         thread_id = None
+        
+    if distribution:
+        count_of_weeks = (datetime.now() - datetime(2024, 2, 5)).days // 7
+        is_odd = (count_of_weeks + 1) % 2 == 1
+        
+        if is_odd and ("чёт" in text) and ("нечёт" not in text):
+            return
+        
+        if (not is_odd) and ("нечёт" in text):
+            return
         
     try:
         bot.send_message(chat_id=id, text=text, parse_mode=ParseMode.HTML, message_thread_id=thread_id,disable_web_page_preview=True)
@@ -433,7 +553,7 @@ def send_message(id, text, thread_id='General'):
         try:
             bot.send_message(chat_id=id, text=text, parse_mode=ParseMode.HTML, message_thread_id=thread_id,disable_web_page_preview=True)
         except Exception as e:
-            text_error = 'Error from user: <code>{}</code>\n{}'.format(id, str(e))
+            text_error = 'Error from user: @{} <code>{}</code>\n{}'.format(for_json.return_infos(id)["username"], id, str(e))
             send_admin_message(text_error)
             print(id, e)
     

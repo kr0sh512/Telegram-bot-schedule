@@ -24,5 +24,5 @@ def send_admin_message(text):
     bot.send_message(admin_id, '🛑 ' + text)
     
 def send_admin_document(file):
-    bot.send_document(admin_id, file, '🛑 Admin file')   
+    bot.send_document(admin_id, file, '🛑 Admin file')
     

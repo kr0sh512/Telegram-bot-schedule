@@ -4,7 +4,7 @@ import schedules as bot
 from datetime import datetime
 
 path_users = "json/users.json" # Нужный путь до json файлов
-path_schedule = "json/schedule.json"
+path_schedule = "json/schedule_2sem.json"
 path_students = "json/students.json"
 # path_logs = "json/logs.json"
 
@@ -52,10 +52,11 @@ def save_user(infos):
                           \n<i>user:</i> @{}\
                           \n<i>group:</i> <code>{}</code>\
                           \n<i>id:</i> <code>{}</code>\
-                          \n<i>name:</i> <code>{}</code>".format(data[infos["id"]]["username"], 
+                          \n<i>name:</i> <code>{} {}</code>".format(data[infos["id"]]["username"], 
                                                                data[infos["id"]]["group"], 
                                                                infos["id"],
-                                                               data[infos["id"]]["first_name"] + data[infos["id"]]["last_name"]))
+                                                               data[infos["id"]]["first_name"],
+                                                               data[infos["id"]]["last_name"]))
                                                         
     return
 
@@ -151,17 +152,17 @@ def create_schedule_tasks(manual=False):
                 start_task = tmp[:-1]
                 
                 if day == 'mon':
-                    schedule.every().monday.at(start_task).do(bot.send_message, id, text, thread_id)
+                    schedule.every().monday.at(start_task).do(bot.send_message, id, text, thread_id, True)
                 elif day == 'tue':
-                    schedule.every().tuesday.at(start_task).do(bot.send_message, id, text, thread_id)
+                    schedule.every().tuesday.at(start_task).do(bot.send_message, id, text, thread_id, True)
                 elif day == 'wed':
-                    schedule.every().wednesday.at(start_task).do(bot.send_message, id, text, thread_id)
+                    schedule.every().wednesday.at(start_task).do(bot.send_message, id, text, thread_id, True)
                 elif day == 'thu':
-                    schedule.every().thursday.at(start_task).do(bot.send_message, id, text, thread_id)
+                    schedule.every().thursday.at(start_task).do(bot.send_message, id, text, thread_id, True)
                 elif day == 'fri':
-                    schedule.every().friday.at(start_task).do(bot.send_message, id, text, thread_id)
+                    schedule.every().friday.at(start_task).do(bot.send_message, id, text, thread_id, True)
                 elif day == 'sat':
-                    schedule.every().saturday.at(start_task).do(bot.send_message, id, text, thread_id)
+                    schedule.every().saturday.at(start_task).do(bot.send_message, id, text, thread_id, True)
     
     return
 
@@ -171,6 +172,21 @@ def groups_in_json():
         schdl = json.load(json_file)
         
     return schdl.keys()
+
+def students_in_group(group):
+    group = str(group)
+    
+    data = {}
+    with open(path_users, 'r', encoding='utf-8') as json_file: 
+        data = json.load(json_file)
+        
+    students = []
+        
+    for i in data.keys():
+        if data[i]["group"] == group:
+            students.append(i)
+    
+    return students
 
 def students_in_json(id="", key=""):
     id = str(id)
@@ -199,7 +215,7 @@ def return_infos(id):
     data = {}
     with open(path_users, 'r', encoding='utf-8') as json_file: 
         data = json.load(json_file)
-    data = data[id]
+    data = data.get(id)
     
     return data
 
