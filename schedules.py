@@ -8,19 +8,6 @@ import for_json
 from admin import admin_command, is_admin, send_admin_message, send_admin_document
 
 # bot = telebot.TeleBot("TOKEN_API")
-# bot = telebot.TeleBot("6240513112:AAHRoeL1g3WpMAeSPs3G7zwShKoYaSDxfYc")   # krosh
-bot = telebot.TeleBot("6355753103:AAGniZ7Wf5XyPkn3z753UJvn6afbhOlImjA") # sсhedule
-
-# def log(func):
-#     def wrapper(*args, **kwargs):
-#         message = args[0]
-        
-#         for_json.add_log(message)
-
-#         func(*args, **kwargs)
-#         return
-
-#     return wrapper
 
 @bot.message_handler(commands=['help', 'faq'])
 def help(message):
