@@ -140,6 +140,9 @@ def spam_cnf(message, data):
         send_admin_message('Отмена отпраки')
         return
     
+    global text_spam
+    text_spam = message.text
+    
     text = "Пожалуйста, проверь итоговое сообщение и подтверди отправку:\
         \n\nКому: "
     
@@ -153,11 +156,11 @@ def spam_cnf(message, data):
         send_admin_message("Ошибка при выборе пользователей")
         return
     
-    text +="\n\nСообщение: " + message.text
+    text +="\n\nСообщение: {}".format(message.text)
     
     markup = types.InlineKeyboardMarkup()
     
-    markup.add(types.InlineKeyboardButton(text="✅", callback_data="spam#{}#{}".format(data, message.text)), 
+    markup.add(types.InlineKeyboardButton(text="✅", callback_data="spam#{}".format(data)), 
                types.InlineKeyboardButton(text="❌", callback_data="spam_no"))
     
     bot.send_message(message.from_user.id, text, parse_mode=ParseMode.HTML, reply_markup=markup)
@@ -170,7 +173,10 @@ def spam_send(call):
         send_admin_message('Отмена отпраки')
         return
     
-    tmp, data, text = call.data.split("#")
+    tmp, data = call.data.split("#")
+    
+    global text_spam
+    text = text_spam
     
     users = []
     
@@ -203,7 +209,7 @@ def pause_bot(message):
 
 @bot.message_handler(commands=['stop'])
 @admin_command
-def pause_bot(message):
+def stop_msg(message):
     if len(str(message.text).split(' ')) != 2:
         send_admin_message('Эта команда вида /stop <i>id_пользователя</i>')
         return
@@ -418,7 +424,7 @@ def pause_schedule(message):
     
     if infos == 'yes':
         for_json.change_user_param(str(message.chat.id), 'allow_message', 'no')
-        send_message(message.chat.id, 'Рассылка сообщений преращена. \
+        send_message(message.chat.id, 'Рассылка сообщений прекращена. \
             \nДля возобновления воспользуйтесь командой\n/pause')
     else:
         for_json.change_user_param(str(message.chat.id), 'allow_message', 'yes')
@@ -448,7 +454,7 @@ def change_thread(message):
 @bot.message_handler(commands=['timeout'])
 def set_timeout(message):
     send_message(message.chat.id, 'Пришли мне число от 1 до 60. \
-        \nЭто будет количество минут, за которое я буду присылать тебе напоминание о уроке (По умолчанию: 10)')
+        \nЭто будет количество минут, за которое я буду присылать тебе напоминание о паре (По умолчанию: 10)')
     bot.register_next_step_handler(message, save_timeout)
     
     return
@@ -529,10 +535,10 @@ def send_message(id, text, thread_id='General', distribution=False):
         count_of_weeks = (datetime.now() - datetime(2024, 2, 5)).days // 7
         is_odd = (count_of_weeks + 1) % 2 == 1
         
-        if is_odd and ("чёт" in text) and ("нечёт" not in text):
+        if is_odd and ("(чёт)" in text):
             return
         
-        if (not is_odd) and ("нечёт" in text):
+        if (not is_odd) and ("(нечёт)" in text):
             return
         
     try:

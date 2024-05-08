@@ -47,16 +47,16 @@ def save_user(infos):
 
     with open(path_users, 'w', encoding='utf-8') as json_file:
         json.dump(data, json_file, ensure_ascii=False, indent=4)
-    create_schedule_tasks()
-    bot.send_admin_message("Новый пользователь:\
-                          \n<i>user:</i> @{}\
-                          \n<i>group:</i> <code>{}</code>\
-                          \n<i>id:</i> <code>{}</code>\
-                          \n<i>name:</i> <code>{} {}</code>".format(data[infos["id"]]["username"], 
-                                                               data[infos["id"]]["group"], 
-                                                               infos["id"],
-                                                               data[infos["id"]]["first_name"],
-                                                               data[infos["id"]]["last_name"]))
+    create_schedule_tasks(manual=True)
+    # bot.send_admin_message("Новый пользователь:\
+    #                       \n<i>user:</i> @{}\
+    #                       \n<i>group:</i> <code>{}</code>\
+    #                       \n<i>id:</i> <code>{}</code>\
+    #                       \n<i>name:</i> <code>{} {}</code>".format(data[infos["id"]]["username"], 
+    #                                                            data[infos["id"]]["group"], 
+    #                                                            infos["id"],
+    #                                                            data[infos["id"]]["first_name"],
+    #                                                            data[infos["id"]]["last_name"]))
                                                         
     return
 
