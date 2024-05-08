@@ -8,6 +8,8 @@ import for_json
 from admin import admin_command, is_admin, send_admin_message, send_admin_document
 
 # bot = telebot.TeleBot("TOKEN_API")
+# bot = telebot.TeleBot("6240513112:AAHRoeL1g3WpMAeSPs3G7zwShKoYaSDxfYc")   # krosh
+bot = telebot.TeleBot("6355753103:AAGniZ7Wf5XyPkn3z753UJvn6afbhOlImjA") # sсhedule
 
 # def log(func):
 #     def wrapper(*args, **kwargs):
@@ -316,7 +318,7 @@ def send_schedule(message):
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton(text="◀️", callback_data="left"),
                types.InlineKeyboardButton(text="▶️", callback_data="right"))
-    bot.send_message(message.chat.id, text, ParseMode.HTML, reply_markup=markup)
+    bot.send_message(message.chat.id, text, ParseMode.HTML, reply_markup=markup, message_thread_id=message.message_thread_id)
     
     return
     
@@ -504,7 +506,7 @@ def send_request(message):
         if type(infos[i]) == type(None):
             infos[i] = ''
     
-    admin_text = 'Сообщение от {} {} (@{}):\n\n{}\nid: {}'.format(infos[1], infos[2], infos[3], infos[4], infos[0])
+    admin_text = 'Сообщение от {} {} (@{}):\n\n{}\nid: <code>{}</code>'.format(infos[1], infos[2], infos[3], infos[4], infos[0])
     send_admin_message(admin_text)
     
     send_message(message.from_user.id, 'Ваше сообщение успешно доставлено!')
@@ -590,4 +592,3 @@ if __name__ == '__main__':
         except Exception as e:
             print(e)
             time.sleep(10)
-            
