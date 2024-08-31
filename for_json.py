@@ -4,7 +4,8 @@ import schedules as bot
 from datetime import datetime
 
 path_users = "json/users.json"  # Нужный путь до json файлов
-path_schedule = "json/schedule_3sem.json"
+# path_schedule = "json/schedule_3sem.json"
+path_schedule = "json/groups/{}.json"
 path_students = "json/students.json"
 
 allow_update = True
@@ -69,7 +70,7 @@ def change_user_param(id, key, value):
     return
 
 
-def parse_lesson(time, lesson):
+def parse_lesson_tmp(time, lesson):
     text = ""
     start, end = time.split("-")
 
@@ -101,6 +102,37 @@ def parse_lesson(time, lesson):
     return text
 
 
+def parse_lesson(lesson: dict[str, str]) -> str:
+    text = ""
+    start, end = lesson["begin"], lesson["end"]
+
+    if not lesson["name"]:
+        return ""
+
+    if len(lesson["teacher.room"]) == 1:
+        text = "{}-{} | {}\
+                \n<b>{}</b>\
+                \n<i>{}</i>".format(
+            start,
+            end,
+            lesson["teacher.room"][0]["r"],
+            lesson["name"],
+            lesson["teacher.room"][0]["t"],
+        )
+    else:
+        text = "{}-{}\
+                \n<b>{}</b>".format(
+            start,
+            end,
+            lesson["name"],
+        )
+
+        for tr in lesson["teacher.room"]:
+            text += "\n({}) <i>{}</i>".format(tr["r"], tr["t"])
+
+    return text
+
+
 def create_schedule_tasks(manual=False):
     global allow_update
 
@@ -117,24 +149,25 @@ def create_schedule_tasks(manual=False):
     schdl = {}
     with open(path_users, "r", encoding="utf-8") as json_file:
         users = json.load(json_file)
-    with open(path_schedule, "r", encoding="utf-8") as json_file:
-        schdl = json.load(json_file)
     for id, params in users.items():
         if params["allow_message"] != "yes":
             continue
         group = params["group"]
         if group == "other":
             continue
-        timeout = params["timeout"]
-        for day in schdl[group]:
-            for i, lesson in schdl[group][day].items():
-                if lesson["name"] == "":  # Неправильный формат schedule
+
+        with open(path_schedule.format(group), "r", encoding="utf-8") as json_file:
+            schdl = json.load(json_file)["schedule"]
+
+        for day in schdl:
+            for lesson in schdl[day]:
+                if not lesson["name"]:  # Неправильный формат schedule
                     continue
 
-                start = i.split("-")[0]
-                text = parse_lesson(i, lesson)
+                start = lesson["begin"]
+                text = parse_lesson(lesson)
 
-                if text == "":
+                if not text:
                     continue
 
                 thread_id = params["thread"]
@@ -151,41 +184,41 @@ def create_schedule_tasks(manual=False):
 
                 if day == "mon":
                     schedule.every().monday.at(start_task).do(
-                        bot.send_message, id, text, thread_id, True
+                        bot.send_message, id, text, thread_id, lesson["partity"]
                     )
                 elif day == "tue":
                     schedule.every().tuesday.at(start_task).do(
-                        bot.send_message, id, text, thread_id, True
+                        bot.send_message, id, text, thread_id, lesson["partity"]
                     )
                 elif day == "wed":
                     schedule.every().wednesday.at(start_task).do(
-                        bot.send_message, id, text, thread_id, True
+                        bot.send_message, id, text, thread_id, lesson["partity"]
                     )
                 elif day == "thu":
                     schedule.every().thursday.at(start_task).do(
-                        bot.send_message, id, text, thread_id, True
+                        bot.send_message, id, text, thread_id, lesson["partity"]
                     )
                 elif day == "fri":
                     schedule.every().friday.at(start_task).do(
-                        bot.send_message, id, text, thread_id, True
+                        bot.send_message, id, text, thread_id, lesson["partity"]
                     )
                 elif day == "sat":
                     schedule.every().saturday.at(start_task).do(
-                        bot.send_message, id, text, thread_id, True
+                        bot.send_message, id, text, thread_id, lesson["partity"]
                     )
 
     return
 
 
-def groups_in_json():
+def groups_in_json() -> list[str]:
     schdl = {}
-    with open(path_schedule, "r", encoding="utf-8") as json_file:
+    with open(path_schedule.format("groups"), "r", encoding="utf-8") as json_file:
         schdl = json.load(json_file)
 
-    return schdl.keys()
+    return schdl
 
 
-def students_in_group(group):
+def students_in_group(group) -> list[str]:
     group = str(group)
 
     data = {}
@@ -201,7 +234,7 @@ def students_in_group(group):
     return students
 
 
-def students_in_json(id="", key=""):
+def students_in_json(id: str, key: str = "") -> list[str] | None:
     id = str(id)
 
     group = {}
@@ -223,7 +256,7 @@ def students_in_json(id="", key=""):
     return stud[key]
 
 
-def return_infos(id):
+def return_infos(id) -> dict[str, str] | None:
     id = str(id)
     data = {}
     with open(path_users, "r", encoding="utf-8") as json_file:
@@ -248,32 +281,38 @@ def pause_bot():
     return
 
 
-def get_schedule(id, day):
+def get_schedule(id: str, day: str) -> str:
     id = str(id)
+
     if day == "sun":
         day = "mon"
+
     days = ["mon", "tue", "wed", "thu", "fri", "sat"]
     russian_days = ["понедельник", "вторник", "среду", "четверг", "пятницу", "субботу"]
 
     text = "<u>Расписание на {}</u>:\n\n".format(russian_days[days.index(day)])
 
     schdl_today = {}
-    with open(path_schedule, "r", encoding="utf-8") as schedule_file:
-        group = ""
-        with open(path_users, "r", encoding="utf-8") as user_file:
-            group = json.load(user_file)[id]["group"]
 
-        if group == "other":
-            return "У тебя не выбрана группа для рассылки сообщений"
+    group = ""
+    with open(path_users, "r", encoding="utf-8") as user_file:
+        group = json.load(user_file)[id]["group"]
 
-        try:
-            schdl_today = json.load(schedule_file)[group][day]
-        except:
-            return "Расписания твоей группы на {} нет".format(
-                russian_days[days.index(day)]
-            )
+    if group == "other":
+        return "У тебя не выбрана группа для рассылки сообщений"
 
-    for i, lesson in schdl_today.items():
-        text += "•" + parse_lesson(i, lesson) + "\n\n"
+    try:
+        with open(path_schedule.format(group), "r", encoding="utf-8") as schedule_file:
+            try:
+                schdl_today = json.load(schedule_file)["schedule"][day]
+            except:
+                return "Расписания твоей группы на {} нет".format(
+                    russian_days[days.index(day)]
+                )
+
+            for lesson in schdl_today:
+                text += "•" + parse_lesson(lesson) + "\n\n"
+    except:
+        return "Расписания твоей группы нет"
 
     return text

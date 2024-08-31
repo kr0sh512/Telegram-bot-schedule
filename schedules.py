@@ -1,5 +1,5 @@
 #!/usr/bin/python3.3
-import threading, telebot, schedule, time, random
+import threading, telebot, schedule, time, random, yaml
 from datetime import datetime
 import os, sys
 from telebot import types
@@ -7,9 +7,10 @@ from telegram.constants import ParseMode
 import for_json
 from admin import admin_command, is_admin, send_admin_message, send_admin_document
 
-# bot = telebot.TeleBot("TOKEN_API")
-bot = telebot.TeleBot("6998513979:AAGgpjgdDsCEqPE0hC8yxrzclsNSd-oRP1s")  # test
-# bot = telebot.TeleBot("6355753103:AAGniZ7Wf5XyPkn3z753UJvn6afbhOlImjA") # sсhedule
+config = yaml.safe_load(open("config.yaml"))
+bot = telebot.TeleBot(config["test_token"])
+
+PARTITY_FIRST = 1
 
 
 @bot.message_handler(commands=["help", "faq"])
@@ -657,18 +658,15 @@ def text_message(message):
     return
 
 
-def send_message(id, text, thread_id="General", distribution=False):
+def send_message(id, text, thread_id="General", partity=None):
     if thread_id == "General":
         thread_id = None
 
-    if distribution:
+    if partity:
         count_of_weeks = (datetime.now() - datetime(2024, 2, 5)).days // 7
-        is_odd = (count_of_weeks + 1) % 2 == 1
+        is_odd = (count_of_weeks + 1) % 2 == PARTITY_FIRST
 
-        if is_odd and ("(чёт)" in text):
-            return
-
-        if (not is_odd) and ("(нечёт)" in text):
+        if is_odd != bool(partity):
             return
 
     try:

@@ -1,6 +1,7 @@
+__pycache__
 users.json
 schedule.json
-settings.json
 json/students.json
 json/schedule_2sem.json
 nohup.out
+config.yaml
