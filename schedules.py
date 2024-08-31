@@ -7,7 +7,9 @@ from telegram.constants import ParseMode
 import for_json
 from admin import admin_command, is_admin, send_admin_message, send_admin_document
 
-bot = telebot.TeleBot("TOKEN_API")
+# bot = telebot.TeleBot("TOKEN_API")
+bot = telebot.TeleBot("6998513979:AAGgpjgdDsCEqPE0hC8yxrzclsNSd-oRP1s")  # test
+# bot = telebot.TeleBot("6355753103:AAGniZ7Wf5XyPkn3z753UJvn6afbhOlImjA") # sсhedule
 
 
 @bot.message_handler(commands=["help", "faq"])
@@ -60,7 +62,7 @@ def test(message):
     return
 
 
-@bot.message_handler(commands=["restart", 'r'])
+@bot.message_handler(commands=["restart", "r"])
 @admin_command
 def restart_bot(message):
     send_admin_message("bye")
@@ -241,10 +243,10 @@ def stop_msg(message):
     if len(str(message.text).split(" ")) != 2:
         send_admin_message("Эта команда вида /stop <i>id_пользователя</i>")
         return
-    
+
     for_json.change_user_param(str(message.text).split(" ")[1], "allow_message", "no")
     send_admin_message("Успешно")
-    
+
     return
 
 
