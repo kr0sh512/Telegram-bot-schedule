@@ -10,7 +10,7 @@ from admin import admin_command, is_admin, send_admin_message, send_admin_docume
 config = yaml.safe_load(open("config.yaml"))
 bot = telebot.TeleBot(config["test_token"])
 
-PARTITY_FIRST = 1
+parity_FIRST = 1
 
 
 @bot.message_handler(commands=["help", "faq"])
@@ -67,7 +67,7 @@ def test(message):
 @admin_command
 def restart_bot(message):
     send_admin_message("bye")
-    os.execv(sys.executable, ["python"] + sys.argv)
+    os.execv(sys.executable, ["python3", "-u"] + sys.argv)
 
 
 @bot.message_handler(commands=["update"])
@@ -147,7 +147,7 @@ def spam(message):
 
 def spam_msg(message):
     if message.text == "stop" or message.text == "стоп" or message.text[0] == "/":
-        send_admin_message("Отмена отпраки")
+        send_admin_message("Отмена отправки")
         return
 
     send_admin_message("Пришли мне текст для рассылки сообщения этим пользователям")
@@ -159,7 +159,7 @@ def spam_msg(message):
 
 def spam_cnf(message, data):
     if message.text == "stop" or message.text == "стоп" or message.text[0] == "/":
-        send_admin_message("Отмена отпраки")
+        send_admin_message("Отмена отправки")
         return
 
     global text_spam
@@ -197,7 +197,7 @@ def spam_cnf(message, data):
 @bot.callback_query_handler(func=lambda call: "spam" in call.data)
 def spam_send(call):
     if call.data == "spam_no":
-        send_admin_message("Отмена отпраки")
+        send_admin_message("Отмена отправки")
         return
 
     tmp, data = call.data.split("#")
@@ -314,17 +314,14 @@ def start(message):
     send_message(message.chat.id, start_txt)
 
     markup = types.InlineKeyboardMarkup()
-    for i in for_json.groups_in_json():
-        markup.add(types.InlineKeyboardButton(text=i, callback_data=i))
+    # for i in for_json.groups_in_json():
+    #     markup.add(types.InlineKeyboardButton(text=i, callback_data=i))
+    markup.add(types.InlineKeyboardButton(text="1 курс", callback_data="1course"))
+    markup.add(types.InlineKeyboardButton(text="2 курс", callback_data="2course"))
 
-    markup.add(
-        types.InlineKeyboardButton(
-            text="Моей группы нет в этом списке", callback_data="other"
-        )
-    )
     bot.send_message(
         message.chat.id,
-        "Пожалуйста, выбери свою группу",
+        "Пожалуйста, выбери свой курс",
         parse_mode=ParseMode.HTML,
         reply_markup=markup,
     )
@@ -333,9 +330,36 @@ def start(message):
 
 
 @bot.callback_query_handler(
-    func=lambda call: call.data in for_json.groups_in_json() or call.data == "other"
+    func=lambda call: call.data in for_json.groups_in_json()
+    or call.data in ["other", "1course", "2course"]
 )
 def callback_inline(call):
+    if "course" in call.data:
+        course = call.data[0]
+
+        markup = types.InlineKeyboardMarkup()
+        for i in [i for i in for_json.groups_in_json() if i[0] == course]:
+            markup.add(types.InlineKeyboardButton(text=i, callback_data=i))
+
+        markup.add(
+            types.InlineKeyboardButton(
+                text="Моей группы нет в этом списке", callback_data="other"
+            )
+        )
+
+        bot.edit_message_text(
+            text="Пожалуйста, выбери свою группу",
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            reply_markup=markup,
+        )
+
+        # bot.edit_message_reply_markup(
+        #     call.message.chat.id, call.message.message_id, reply_markup=markup
+        # )
+
+        return
+
     infos = [
         call.from_user.id,
         call.from_user.first_name,
@@ -350,8 +374,7 @@ def callback_inline(call):
         bot.edit_message_text(
             chat_id=call.message.chat.id,
             message_id=call.message.message_id,
-            text="Используй команду /request \
-                                  и напиши номер группы, которую хочешь добавить\
+            text="Используй команду /request и напиши номер группы, которую хочешь добавить\
                                   \nПосле создания расписания для твоей группы, я пришлю тебе сообщение",
             parse_mode=ParseMode.HTML,
         )
@@ -609,7 +632,7 @@ def request(message):
 
 def send_request(message):
     if message.text == "stop" or message.text == "стоп" or message.text[0] == "/":
-        send_message(message.from_user.id, "Отмена отпраки")
+        send_message(message.from_user.id, "Отмена отправки")
         return
 
     infos = [
@@ -658,15 +681,15 @@ def text_message(message):
     return
 
 
-def send_message(id, text, thread_id="General", partity=None):
+def send_message(id, text, thread_id="General", parity=None):
     if thread_id == "General":
         thread_id = None
 
-    if partity:
+    if parity:
         count_of_weeks = (datetime.now() - datetime(2024, 2, 5)).days // 7
-        is_odd = (count_of_weeks + 1) % 2 == PARTITY_FIRST
+        is_odd = (count_of_weeks + 1) % 2 == parity_FIRST
 
-        if is_odd != bool(partity):
+        if is_odd != bool(parity):
             return
 
     try:
@@ -691,8 +714,8 @@ def send_message(id, text, thread_id="General", partity=None):
             text_error = "Error from user: @{} <code>{}</code>\n{}".format(
                 for_json.return_infos(id)["username"], id, str(e)
             )
-            send_admin_message(text_error)
-            print(id, e)
+            # send_admin_message(text_error)
+            print(f"--- {text_error} ---")
 
     return
 
