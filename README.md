@@ -35,23 +35,23 @@ This project is a Telegram bot designed to manage and display schedules. The bot
 
 ## Commands
 
-- `/start` - используй, чтобы сменить номер группы.
-- `/schedule` - используй, чтобы получить расписание на сегодня.
-- `/random` - сделай очередь из людей
-- `/info` - используй, чтобы узнать твои настройки бота
-- `/pause` - используй, чтобы прекратить получать сообщения от бота
-- `/thread` - используй в нужном чате канала, чтобы бот отправлял сообщения именно туда
-- `/timeout` - настрой время, когда бот будет присылать тебе сообщение
-- `/request` - используй, чтобы отправить разработчику какой-то запрос
-- `/source` - Страница бота на Github
-- `/restart` - перезапуск бота (admin only).
-- `/update` - обновление schedule задач (admin only)
-- `/stats` - получание статистики (admin only)
-- `/json` - получить файл пользователей и расписания (admin only)
-- `/info` <i>id_пользователя</i> - узнать настройки пользователя (admin only)
-- `/spam` - сделать рассылку (admin only)
-- `/pause_all` - приостановить бота для всех (каникулы/выходные) (admin only)
-- `/stop` <i>id_пользователя</i> - приостановить отправку сообщений для пользователя (admin only)
+- `/start` - use to change the group number.
+- `/schedule` - use to get today's schedule.
+- `/random` - create a queue of people.
+- `/info` - use to find out your bot settings.
+- `/pause` - use to stop receiving messages from the bot.
+- `/thread` - use in the desired channel chat so that the bot sends messages there.
+- `/timeout` - set the time when the bot will send you a message.
+- `/request` - use to send a request to the developer.
+- `/source` - Bot's page on Github.
+- `/restart` - restart the bot (admin only).
+- `/update` - update schedule tasks (admin only).
+- `/stats` - get statistics (admin only).
+- `/json` - get the users and schedule file (admin only).
+- `/info` <i>user_id</i> - find out the user's settings (admin only).
+- `/spam` - send a broadcast message (admin only).
+- `/pause_all` - pause the bot for everyone (holidays/weekends) (admin only).
+- `/stop` <i>user_id</i> - stop sending messages to the user (admin only).
 
 ## Contributing
 
