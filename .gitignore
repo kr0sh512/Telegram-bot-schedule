@@ -8,3 +8,6 @@ json_remake
 script.py
 nohup.out
 config.yaml
+old_files/
+yaml_groups/*
+!yaml_groups/202.yaml

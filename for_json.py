@@ -1,12 +1,12 @@
 #!/usr/bin/python3.3
-import json, schedule
+import json, yaml, schedule
 import schedules as bot
 from datetime import datetime
 
 path_users = "json/users.json"  # Нужный путь до json файлов
-# path_schedule = "json/schedule_3sem.json"
-path_schedule = "json/groups/{}.json"
+path_schedule = "yaml_groups/{}.yaml"
 path_students = "json/students.json"
+path_groups = "json/groups.json"
 
 allow_update = True
 
@@ -129,7 +129,8 @@ def create_schedule_tasks(manual=False):
             continue
 
         with open(path_schedule.format(group), "r", encoding="utf-8") as json_file:
-            schdl = json.load(json_file)["schedule"]
+            # schdl = json.load(json_file)["schedule"]
+            schdl = yaml.safe_load(json_file)["schedule"]
 
         for day in schdl:
             for lesson in schdl[day]:
@@ -183,11 +184,11 @@ def create_schedule_tasks(manual=False):
 
 
 def groups_in_json() -> list[str]:
-    schdl = {}
-    with open(path_schedule.format("groups"), "r", encoding="utf-8") as json_file:
-        schdl = json.load(json_file)
+    groups = {}
+    with open(path_groups, "r", encoding="utf-8") as json_file:
+        groups = json.load(json_file)
 
-    return schdl
+    return groups
 
 
 def students_in_group(group) -> list[str]:
@@ -276,7 +277,8 @@ def get_schedule(id: str, day: str) -> str:
     try:
         with open(path_schedule.format(group), "r", encoding="utf-8") as schedule_file:
             try:
-                schdl_today = json.load(schedule_file)["schedule"][day]
+                # schdl_today = json.load(schedule_file)["schedule"][day]
+                schdl_today = yaml.safe_load(schedule_file)["schedule"][day]
             except:
                 return "Расписания твоей группы на {} нет".format(
                     russian_days[days.index(day)]

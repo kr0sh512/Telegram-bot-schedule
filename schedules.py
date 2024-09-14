@@ -398,7 +398,15 @@ def send_schedule(message):
         day = datetime.today().strftime("%A").lower()[:3]  # mon tue ...
         text = for_json.get_schedule(message.chat.id, day)
     except Exception as e:
-        send_admin_message("Schedule error from: {} \n\n {}".format(message.chat.id, e))
+        # send_admin_message(
+        #     "Schedule error from: {} \n\n {}".format(message.chat.id, str(e))
+        # )
+        bot.send_message(
+            message.chat.id,
+            "Пожалуйста, проверь, что ты зарегестрировался с помощью команды /start",
+            ParseMode.HTML,
+            message_thread_id=message.message_thread_id,
+        )
 
     markup = types.InlineKeyboardMarkup()
     markup.add(
@@ -586,7 +594,7 @@ def change_thread(message):
 def set_timeout(message):
     send_message(
         message.chat.id,
-        "Пришли мне число от 1 до 60. \
+        "Пришли мне число от 1 до 59. \
         \nЭто будет количество минут, за которое я буду присылать тебе напоминание о паре (По умолчанию: 10)",
     )
     bot.register_next_step_handler(message, save_timeout)
@@ -597,7 +605,7 @@ def set_timeout(message):
 def save_timeout(message):
     if (
         str(message.text).isdigit()
-        and int(message.text) <= 60
+        and int(message.text) <= 59
         and int(message.text) >= 1
     ):
         for_json.change_user_param(message.chat.id, "timeout", str(message.text))
@@ -610,7 +618,7 @@ def save_timeout(message):
     else:
         send_message(
             message.chat.id,
-            "Пожалуйста, пришли <u>число</u> от 1 до 60. \
+            "Пожалуйста, пришли <u>число</u> от 1 до 59. \
                         \nПо умолчанию: 10",
         )
         send_message(message.chat.id, "Изменения не были внесены")

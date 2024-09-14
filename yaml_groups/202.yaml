@@ -1,0 +1,201 @@
+studies.begin: {y: 2024, m: 9, d: 1}
+studies.end: null
+schedule:
+  mon:
+  - begin: '8:45'
+    end: '10:20'
+    name: Английский язык
+    teacher.room:
+    - {t: Бим М.М., r: '735'}
+    - {t: ' Шубина Ю.В.', r: '73'}
+    type: seminar
+    parity: null
+  - begin: '10:30'
+    end: '12:05'
+    name: Практикум на ЭВМ
+    teacher.room:
+    - {t: Тюляева В.В., r: МЗ-4}
+    - {t: '', r: null}
+    type: seminar
+    parity: null
+  - begin: '12:15'
+    end: '13:50'
+    name: Классическая механика
+    teacher.room:
+    - {t: Брандт Н.Н., r: '659'}
+    type: seminar
+    parity: null
+  - begin: '15:00'
+    end: '16:30'
+    name: Физическая культура
+    teacher.room: []
+    type: null
+    parity: null
+  tue:
+  - begin: '8:45'
+    end: '10:20'
+    name: Теория вероятностей и математическая статистика
+    teacher.room:
+    - {t: профессор Королёв Виктор Юрьевич, r: П-13}
+    type: lecture
+    parity: null
+  - begin: '10:30'
+    end: '12:05'
+    name: Математический анализ
+    teacher.room:
+    - {t: доцент Крицков Леонид Владимирович, r: П-11}
+    type: lecture
+    parity: null
+  - begin: '12:15'
+    end: '13:50'
+    name: Математический анализ
+    teacher.room:
+    - {t: Сычугов Д.Ю., r: '606'}
+    type: seminar
+    parity: null
+  - begin: '14:35'
+    end: '16:10'
+    name: Обыкновенные дифференциальные ур-я
+    teacher.room:
+    - {t: Дмитриева И.В., r: '607'}
+    type: seminar
+    parity: null
+  - begin: '16:20'
+    end: '17:55'
+    name: null
+    teacher.room: []
+    type: seminar
+    parity: null
+  wed:
+  - begin: '8:45'
+    end: '10:20'
+    name: Практикум на ЭВМ
+    teacher.room:
+    - {t: Тюляева В.В., r: '507'}
+    type: seminar
+    parity: null
+  - begin: '10:30'
+    end: '12:05'
+    name: Математический анализ
+    teacher.room:
+    - {t: доцент Крицков Леонид Владимирович, r: П-6}
+    type: lecture
+    parity: null
+  - begin: '12:15'
+    end: '13:50'
+    name: Обыкновенные дифференциальные уравнения
+    teacher.room:
+    - {t: профессор Денисов Александр Михайлович, r: П-6}
+    type: lecture
+    parity: null
+  - begin: '15:10'
+    end: '18:50'
+    name: Межфакультетские курсы
+    teacher.room: []
+    type: seminar
+    parity: null
+  thu:
+  - begin: '8:45'
+    end: '10:20'
+    name: Операционные системы
+    teacher.room:
+    - {t: профессор Машечкин Игорь Валерьевич, r: П-13}
+    type: lecture
+    parity: null
+  - begin: '10:30'
+    end: '12:05'
+    name: Операционные системы
+    teacher.room:
+    - {t: профессор Машечкин Игорь Валерьевич, r: П-13}
+    type: lecture
+    parity: null
+  - begin: '12:15'
+    end: '13:50'
+    name: Английский язык
+    teacher.room:
+    - {t: Бим М.М., r: '71'}
+    - {t: '', r: null}
+    type: seminar
+    parity: null
+  - begin: '14:35'
+    end: '16:10'
+    name: Введение в численные методы
+    teacher.room:
+    - {t: доцент Нефёдов Владимир Вадимович, r: П-5}
+    type: lecture
+    parity: null
+  - begin: '16:20'
+    end: '17:55'
+    name: null
+    teacher.room: []
+    type: seminar
+    parity: null
+  fri:
+  - begin: '8:45'
+    end: '10:20'
+    name: Английский язык
+    teacher.room:
+    - {t: Шубина Ю.В., r: '506'}
+    type: seminar
+    parity: null
+  - begin: '10:50'
+    end: '12:20'
+    name: Физическая культура
+    teacher.room: []
+    type: null
+    parity: null
+  - begin: '12:50'
+    end: '14:25'
+    name: Теория вероятностей и математич. статистика
+    teacher.room:
+    - {t: Шевцова И.Г., r: '504'}
+    type: seminar
+    parity: null
+  - begin: '14:35'
+    end: '16:10'
+    name: Математический анализ
+    teacher.room:
+    - {t: Сычугов Д.Ю., r: '615'}
+    type: seminar
+    parity: null
+  - begin: '16:20'
+    end: '17:55'
+    name: null
+    teacher.room: []
+    type: seminar
+    parity: null
+  sat:
+  - begin: '8:45'
+    end: '10:20'
+    name: Философия
+    teacher.room:
+    - {t: профессор Девятова Светлана Владимировна, r: П-14}
+    type: lecture
+    parity: null
+  - begin: '10:30'
+    end: '12:05'
+    name: Философия Девятова С.В.
+    teacher.room:
+    - {t: null, r: '508'}
+    type: seminar
+    parity: null
+  - begin: '12:15'
+    end: '13:50'
+    name: null
+    teacher.room: []
+    type: seminar
+    parity: null
+  - begin: '14:35'
+    end: '16:10'
+    name: Операционные системы
+    teacher.room:
+    - {t: профессор Машечкин Игорь Валерьевич, r: П-13}
+    type: lecture
+    parity: null
+  - begin: '16:20'
+    end: '17:55'
+    name: Операционные системы
+    teacher.room:
+    - {t: профессор Машечкин Игорь Валерьевич, r: П-13}
+    type: lecture
+    parity: null
