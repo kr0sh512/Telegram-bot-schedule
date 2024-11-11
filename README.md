@@ -1,7 +1,7 @@
 # Telegram Bot Schedule
 This project is a Telegram bot designed to manage and display schedules. The bot can help users keep track of their daily activities, appointments, and events.
 
-A working version of the [bot for cmc msu](t.me/vmk_schedule_bot) students
+A working version of the [bot for cmc msu](https://t.me/vmk_schedule_bot) students
 
 ## Features
 
