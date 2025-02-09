@@ -11,3 +11,5 @@ config.yaml
 old_files/
 yaml_groups/*
 !yaml_groups/202.yaml
+main_yaml_groups/*
+.env
