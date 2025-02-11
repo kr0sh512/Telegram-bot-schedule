@@ -1,3 +1,5 @@
+CREATE DATABASE IF NOT EXISTS tg_schedule;
+
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT PRIMARY KEY,
     username VARCHAR(255),
