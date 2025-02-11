@@ -20,3 +20,5 @@ main_yaml_groups/*
 Новая таблица - 2 курс весна 2025 copy.csv
 Новая таблица - 2 курс весна 2025.csv
 schedule copy.sql
+tmp/
+credentials.json

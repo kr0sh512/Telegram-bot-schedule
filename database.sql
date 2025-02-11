@@ -1,11 +1,11 @@
-CREATE DATABASE IF NOT EXISTS tg_schedule;
+CREATE DATABASE tg_schedule;
 
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT PRIMARY KEY,
     username VARCHAR(255),
-    first_name VARCHAR(255) NOT NULL,
+    first_name VARCHAR(255),
     last_name VARCHAR(255),
-    group VARCHAR(255) DEFAULT 'other',
+    "group" VARCHAR(255) DEFAULT 'other',
     timeout INT DEFAULT 10,
     allow_message BOOLEAN DEFAULT TRUE,
     thread VARCHAR(255) DEFAULT 'General',
@@ -21,6 +21,6 @@ CREATE TABLE IF NOT EXISTS schedule(
     lector VARCHAR(255),
     is_lecture BOOLEAN DEFAULT FALSE,
     room VARCHAR(20),
-    group VARCHAR(10),
-    parity VARCHAR(10),
+    "group" VARCHAR(10),
+    parity VARCHAR(10)
 );

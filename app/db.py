@@ -55,10 +55,18 @@ def into_list(rows: list[tuple], column_name: list[tuple]) -> list[dict]:
 
 
 def save_user(infos):
+    # infos = [
+    #     call.from_user.id,
+    #     call.from_user.first_name,
+    #     call.from_user.last_name,
+    #     call.from_user.username,
+    #     call.data,
+    # ]
+
     conn = db.getconn()
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO users (id, username, first_name, last_name, group) VALUES (%s, %s, %s, %s, %s)",
+        'INSERT INTO users (id, first_name, last_name, username, "group") VALUES (%s, %s, %s, %s, %s) ON CONFLICT (id) DO UPDATE SET first_name = EXCLUDED.first_name, last_name = EXCLUDED.last_name, username = EXCLUDED.username, "group" = EXCLUDED."group"',
         infos,
     )
 
@@ -96,15 +104,36 @@ def parse_lesson(lesson: dict[str, str]) -> str:
     if lesson["parity"] == 1:
         lesson["course"] += " (нечёт.)"
 
-    text = "{}-{} | {}\
-            \n<b>{}</b>\
-            \n<i>{}</i>".format(
-        start,
-        end,
-        lesson["room"],
-        lesson["course"],
-        lesson["lector"],
-    )
+    if lesson["lector"]:
+        if "/" not in lesson["lector"]:
+            text = "{}-{} | {}\
+                    \n<b>{}</b>\
+                    \n<i>{}</i>".format(
+                start,
+                end,
+                lesson["room"],
+                lesson["course"],
+                lesson["lector"],
+            )
+        else:
+            lectors = lesson["lector"].split("/")
+            text = "{}-{} | {}\
+                    \n<b>{}</b>\
+                    \n<i>{}</i> / <i>{}</i>".format(
+                start,
+                end,
+                lesson["room"].replace("/", ", "),
+                lesson["course"],
+                lectors[0],
+                lectors[1],
+            )
+    else:
+        text = "{}-{}\
+                \n<b>{}</b>".format(
+            start,
+            end,
+            lesson["course"],
+        )
 
     return text
 
@@ -132,8 +161,10 @@ def create_schedule_tasks(manual=False):
         if group == "other":
             continue
 
-        cursor.execute("SELECT * FROM schedule WHERE group = %s", (group,))
+        cursor.execute('SELECT * FROM schedule WHERE "group" = %s', (group,))
         data = cursor.fetchall()
+        if not data:
+            continue
         schdl = into_list(data, cursor.description)
 
         for lesson in schdl:
@@ -191,7 +222,7 @@ def create_schedule_tasks(manual=False):
 def groups_in_json() -> list[str]:
     conn = db.getconn()
     cursor = conn.cursor()
-    cursor.execute("SELECT DISTINCT group FROM schedule ORDER BY group")
+    cursor.execute('SELECT DISTINCT "group" FROM schedule ORDER BY "group"')
     data = cursor.fetchall()
     groups = [row[0] for row in data]
     db.putconn(conn)
@@ -204,7 +235,7 @@ def students_in_group(group) -> list[str]:
 
     conn = db.getconn()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE group = %s", (group,))
+    cursor.execute('SELECT * FROM users WHERE "group" = %s', (group,))
     data = cursor.fetchall()
     students = [row[0] for row in data]
     db.putconn(conn)
@@ -251,7 +282,7 @@ def get_schedule(id: str, day: str) -> str:
 
     conn = db.getconn()
     cursor = conn.cursor()
-    cursor.execute("SELECT group FROM users WHERE id = %s", (id,))
+    cursor.execute('SELECT "group" FROM users WHERE id = %s', (id,))
     data = cursor.fetchone()
     group = data[0]
     db.putconn(conn)
@@ -259,9 +290,12 @@ def get_schedule(id: str, day: str) -> str:
     if group == "other":
         return "У тебя не выбрана группа для рассылки сообщений"
 
+    if group not in groups_in_json():
+        return f"Такой группы нет в базе. Проверь в <a href='https://docs.google.com/spreadsheets/d/{os.environ.get('TABLE_ID')}/edit?usp=sharing'>таблице</a> существование расписания для твоей группы"
+
     conn = db.getconn()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM schedule WHERE group = %s", (group,))
+    cursor.execute('SELECT * FROM schedule WHERE "group" = %s', (group,))
     data = cursor.fetchall()
     schdl = into_list(data, cursor.description)
     db.putconn(conn)

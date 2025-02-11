@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-bot = telebot.TeleBot(os.environ.get("TG_TEST_TOKEN"))
+bot = telebot.TeleBot(os.environ.get("TG_TEST_TOKEN"), parse_mode=ParseMode.HTML)
 
 PARITY_FIRST = 0
 
@@ -30,6 +30,11 @@ def help(message):
             \n\nИли же можно всегда написать напрямую: @Kr0sH_512"
 
     send_message(message.chat.id, help_msg)
+
+    help_msg2 = f"Бот берёт расписание из таблицы, которую можно посмотреть по ссылке:\
+        \n<a href='https://docs.google.com/spreadsheets/d/{os.environ.get('TABLE_ID')}/edit?usp=sharing'>Расписание</a>"
+
+    send_message(message.chat.id, help_msg2)
 
     if is_admin(message):
         admin_help_msg = "И команды только для админа:\
@@ -262,16 +267,16 @@ def start(message):
                 else:
                     send_message(
                         message.chat.id,
-                        "Похоже, что расписания для этой группы ещё не существует. \
-                        \nРазработчик уже пинается, но можете дополнительно написать ему: @Kr0sH_512",
+                        f"Похоже, что расписания для этой группы ещё не существует. \
+                        \nПроверьте расписание своей группы в <a href='https://docs.google.com/spreadsheets/d/{os.environ.get('TABLE_ID')}/edit?usp=sharing'>этой таблице</a>",
                     )
 
-                    send_admin_message(
-                        "В группе {} был запрос на {} группу.\
-                        \nid: {}".format(
-                            message.chat.title, temp, message.chat.id
-                        )
-                    )
+                    # send_admin_message(
+                    #     "В группе {} был запрос на {} группу.\
+                    #     \nid: {}".format(
+                    #         message.chat.title, temp, message.chat.id
+                    #     )
+                    # )
                     temp = "other"
                 db.save_user(infos)
             else:
@@ -290,6 +295,8 @@ def start(message):
     #     markup.add(types.InlineKeyboardButton(text=i, callback_data=i))
     markup.add(types.InlineKeyboardButton(text="1 курс", callback_data="1course"))
     markup.add(types.InlineKeyboardButton(text="2 курс", callback_data="2course"))
+    markup.add(types.InlineKeyboardButton(text="3 курс", callback_data="2course"))
+    markup.add(types.InlineKeyboardButton(text="4 курс", callback_data="2course"))
 
     bot.send_message(
         message.chat.id,
@@ -346,8 +353,9 @@ def callback_inline(call):
         bot.edit_message_text(
             chat_id=call.message.chat.id,
             message_id=call.message.message_id,
-            text="Используй команду /request и напиши номер группы, которую хочешь добавить\
-                                  \nПосле создания расписания для твоей группы, я пришлю тебе сообщение",
+            text=f"Пожалуйста, проверь расписание для своей группы в <a href='https://docs.google.com/spreadsheets/d/{os.environ.get('TABLE_ID')}/edit?usp=sharing'>этой таблице</a>",
+            # text="Используй команду /request и напиши номер группы, которую хочешь добавить\
+            #                       \nПосле создания расписания для твоей группы, я пришлю тебе сообщение",
             parse_mode=ParseMode.HTML,
         )
     else:
@@ -605,7 +613,7 @@ def send_message(id, text, thread_id="General", parity=None):
     if thread_id == "General":
         thread_id = None
 
-    if parity != None:
+    if parity and parity != "-":
         parity = int(parity)
         count_of_weeks = (datetime.now() - datetime(2024, 2, 5)).days // 7
         is_odd = (count_of_weeks + 1) % 2 == PARITY_FIRST

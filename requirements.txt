@@ -1,6 +1,11 @@
 pytelegrambotapi
+python-telegram-bot
 coloredlogs
 psycopg2-binary
 sshtunnel
 python-dotenv
 schedule
+google-api-python-client
+oauth2client
+gspread
+pandas
