@@ -12,3 +12,8 @@ for var in "${env_vars[@]}"; do
     fi
 done
 
+# Add cron jobs to crontab
+(crontab -l 2>/dev/null; echo "0 * * * * python3 /app/upload_sql.py") | crontab -
+
+# Start the schedules.py script
+python3 -u /app/schedules.py &
