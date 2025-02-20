@@ -56,14 +56,6 @@ def into_list(rows: list[tuple], column_name: list[tuple]) -> list[dict]:
 
 
 def save_user(infos):
-    # infos = [
-    #     call.from_user.id,
-    #     call.from_user.first_name,
-    #     call.from_user.last_name,
-    #     call.from_user.username,
-    #     call.data,
-    # ]
-
     conn = db.getconn()
     cursor = conn.cursor()
     cursor.execute(
@@ -178,6 +170,8 @@ def create_schedule_tasks(manual=False):
         if not data:
             continue
         schdl = into_list(data, cursor.description)
+
+        schdl.sort(key=lambda lesson: datetime.strptime(lesson["begin_time"], "%H:%M"))
 
         for lesson in schdl:
             if not lesson["course"]:

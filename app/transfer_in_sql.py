@@ -7,46 +7,8 @@ from psycopg2 import pool
 import json
 
 
-allow_update = True
-
 load_dotenv()
 
-"""
-{
-    "1025872648": {
-        "username": "ahunuin",
-        "first_name": "Arseniy",
-        "last_name": "",
-        "group": "205",
-        "timeout": "10",
-        "allow_message": "yes",
-        "thread": "General"
-    },
-    "856850518": {
-        "username": "kr0sh_512",
-        "first_name": "Дмитрий",
-        "last_name": "",
-        "group": "202",
-        "timeout": "10",
-        "allow_message": "no",
-        "thread": "General"
-    }
-}
-"""
-
-"""
-CREATE TABLE IF NOT EXISTS users (
-    id BIGINT PRIMARY KEY,
-    username VARCHAR(255),
-    first_name VARCHAR(255),
-    last_name VARCHAR(255),
-    "group" VARCHAR(255) DEFAULT 'other',
-    timeout INT DEFAULT 10,
-    allow_message BOOLEAN DEFAULT TRUE,
-    thread VARCHAR(255) DEFAULT 'General',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-"""
 
 if os.environ.get("ENV") == "dev":
     print("DEV: Connecting to local database")
