@@ -11,3 +11,14 @@ config.yaml
 old_files/
 yaml_groups/*
 !yaml_groups/202.yaml
+main_yaml_groups/*
+.env
+1 курс весна 2025.xlsx
+2 курс весна 2025.xls
+Новая таблица - 1 курс весна 2025 copy.csv
+Новая таблица - 1 курс весна 2025.csv
+Новая таблица - 2 курс весна 2025 copy.csv
+Новая таблица - 2 курс весна 2025.csv
+schedule copy.sql
+tmp/
+credentials.json

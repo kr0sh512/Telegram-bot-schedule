@@ -1,6 +1,10 @@
 import schedules as bot
+from dotenv import load_dotenv
+import os
 
-admin_id = "856850518"
+load_dotenv()
+
+admin_id = str(os.environ.get("TG_ADMIN_ID"))
 
 
 def admin_command(func):

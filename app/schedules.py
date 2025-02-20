@@ -1,16 +1,25 @@
 #!/usr/bin/python3.3
-import threading, telebot, schedule, time, random, yaml
+import threading, telebot, schedule, time, random
 from datetime import datetime
 import os, sys
 from telebot import types
 from telegram.constants import ParseMode
-import for_json
+import db
 from admin import admin_command, is_admin, send_admin_message, send_admin_document
+from dotenv import load_dotenv
 
-config = yaml.safe_load(open("config.yaml"))
-bot = telebot.TeleBot(config["test_token"])
+load_dotenv()
 
-parity_FIRST = 1
+bot = telebot.TeleBot(
+    (
+        os.environ.get("TG_TEST_TOKEN")
+        if os.environ.get("ENV") == "dev"
+        else os.environ.get("TG_API_TOKEN")
+    ),
+    parse_mode=ParseMode.HTML,
+)
+
+PARITY_FIRST = 0
 
 
 @bot.message_handler(commands=["help", "faq"])
@@ -29,12 +38,16 @@ def help(message):
 
     send_message(message.chat.id, help_msg)
 
+    help_msg2 = f"Бот берёт расписание из таблицы, которую можно посмотреть по ссылке:\
+        \n<a href='https://docs.google.com/spreadsheets/d/{os.environ.get('TABLE_ID')}/edit?usp=sharing'>Расписание</a>"
+
+    send_message(message.chat.id, help_msg2)
+
     if is_admin(message):
         admin_help_msg = "И команды только для админа:\
             \n/restart - перезапуск бота.\
             \n/update - обновление schedule задач\
             \n/stats - получание статистики\
-            \n/json - получить файл пользователей и расписания\
             \n/info <i>id_пользователя</i> - узнать настройки пользователя\
             \n/spam - сделать рассылку\
             \n/pause_all - приостановить бота для всех (каникулы/выходные)\
@@ -47,22 +60,6 @@ def help(message):
 ### --//--
 
 
-@bot.message_handler(commands=["test", "t"])
-@admin_command
-def test(message):
-    text = '<b>Жирный текст</b>\
-        \n<i>Курсивный текст</i>\
-        \n<u>Подчёркнутый</u>\
-        \n<s>Перечёркнутый текст</s>\
-        \n<a href="google.com">Ссылка</a>\
-        \n<code>Моноширинный текст</code>\
-        \n<pre>Форматированный с сохранением     пробелов</pre>\
-        \n<blockquote>Цитата</blockquote>'
-    send_admin_message(text)
-
-    return
-
-
 @bot.message_handler(commands=["restart", "r"])
 @admin_command
 def restart_bot(message):
@@ -73,7 +70,7 @@ def restart_bot(message):
 @bot.message_handler(commands=["update"])
 @admin_command
 def update_schedules(message):
-    for_json.create_schedule_tasks(manual=True)
+    db.create_schedule_tasks(manual=True)
     send_admin_message("Произошёл update")
 
     return
@@ -89,18 +86,18 @@ def send_stat(message):
     sum_dis_not = 0
     sum_chats = 0
 
-    groups = list(for_json.groups_in_json())
+    groups = list(db.groups_in_json())
     groups.append("other")
 
     for i in groups:
-        users = for_json.students_in_group(i)
+        users = db.students_in_group(i)
         sum_users += len(users)
 
         dis_not = len(
             [
                 i
                 for i, x in enumerate(users)
-                if for_json.return_infos(x)["allow_message"] == "no"
+                if db.return_infos(x)["allow_message"] == "no"
             ]
         )
         sum_dis_not += dis_not
@@ -113,19 +110,6 @@ def send_stat(message):
     text += "\n\nВсего: {} / {} / {}".format(sum_users, sum_dis_not, sum_chats)
 
     send_admin_message(text)
-
-    return
-
-
-@bot.message_handler(commands=["json"])
-@admin_command
-def send_json(message):
-    with open(for_json.path_users, "rb") as json_file:
-        send_admin_document(json_file)
-    with open(for_json.path_schedule, "rb") as json_file:
-        send_admin_document(json_file)
-    with open(for_json.path_students, "rb") as json_file:
-        send_admin_document(json_file)
 
     return
 
@@ -170,10 +154,10 @@ def spam_cnf(message, data):
 
     if data == "all":
         text += "<u>всем</u>"
-    elif data in for_json.groups_in_json():
+    elif data in db.groups_in_json():
         text += "{} группе".format(data)
-    elif for_json.return_infos(data) != None:
-        text += "пользователю @{}".format(for_json.return_infos(data)["username"])
+    elif db.return_infos(data) != None:
+        text += "пользователю @{}".format(db.return_infos(data)["username"])
     else:
         send_admin_message("Ошибка при выборе пользователей")
         return
@@ -208,13 +192,13 @@ def spam_send(call):
     users = []
 
     if data == "all":
-        groups = for_json.groups_in_json()
+        groups = db.groups_in_json()
         for group in groups:
-            users += for_json.students_in_group(group)
-        users += for_json.students_in_group("other")
-    elif data in for_json.groups_in_json():
-        users = for_json.students_in_group(data)
-    elif for_json.return_infos(data) != None:
+            users += db.students_in_group(group)
+        users += db.students_in_group("other")
+    elif data in db.groups_in_json():
+        users = db.students_in_group(data)
+    elif db.return_infos(data) != None:
         users = [data]
 
     for i in users:
@@ -233,7 +217,7 @@ def spam_send(call):
 @bot.message_handler(commands=["pause_all"])
 @admin_command
 def pause_bot(message):
-    for_json.pause_bot()
+    db.pause_bot()
 
     return
 
@@ -245,7 +229,7 @@ def stop_msg(message):
         send_admin_message("Эта команда вида /stop <i>id_пользователя</i>")
         return
 
-    for_json.change_user_param(str(message.text).split(" ")[1], "allow_message", "no")
+    db.change_user_param(str(message.text).split(" ")[1], "allow_message", "no")
     send_admin_message("Успешно")
 
     return
@@ -280,7 +264,7 @@ def start(message):
                     temp,
                 ]
 
-                if temp in for_json.groups_in_json():
+                if temp in db.groups_in_json():
                     send_message(
                         message.chat.id,
                         "Отлично! Теперь я буду присылать вам расписание {} группы".format(
@@ -290,18 +274,18 @@ def start(message):
                 else:
                     send_message(
                         message.chat.id,
-                        "Похоже, что расписания для этой группы ещё не существует. \
-                        \nРазработчик уже пинается, но можете дополнительно написать ему: @Kr0sH_512",
+                        f"Похоже, что расписания для этой группы ещё не существует. \
+                        \nПроверьте расписание своей группы в <a href='https://docs.google.com/spreadsheets/d/{os.environ.get('TABLE_ID')}/edit?usp=sharing'>этой таблице</a>",
                     )
 
-                    send_admin_message(
-                        "В группе {} был запрос на {} группу.\
-                        \nid: {}".format(
-                            message.chat.title, temp, message.chat.id
-                        )
-                    )
+                    # send_admin_message(
+                    #     "В группе {} был запрос на {} группу.\
+                    #     \nid: {}".format(
+                    #         message.chat.title, temp, message.chat.id
+                    #     )
+                    # )
                     temp = "other"
-                for_json.save_user(infos)
+                db.save_user(infos)
             else:
                 send_message(
                     message.chat.id,
@@ -314,10 +298,12 @@ def start(message):
     send_message(message.chat.id, start_txt)
 
     markup = types.InlineKeyboardMarkup()
-    # for i in for_json.groups_in_json():
+    # for i in db.groups_in_json():
     #     markup.add(types.InlineKeyboardButton(text=i, callback_data=i))
     markup.add(types.InlineKeyboardButton(text="1 курс", callback_data="1course"))
     markup.add(types.InlineKeyboardButton(text="2 курс", callback_data="2course"))
+    markup.add(types.InlineKeyboardButton(text="3 курс", callback_data="2course"))
+    markup.add(types.InlineKeyboardButton(text="4 курс", callback_data="2course"))
 
     bot.send_message(
         message.chat.id,
@@ -330,7 +316,7 @@ def start(message):
 
 
 @bot.callback_query_handler(
-    func=lambda call: call.data in for_json.groups_in_json()
+    func=lambda call: call.data in db.groups_in_json()
     or call.data in ["other", "1course", "2course"]
 )
 def callback_inline(call):
@@ -338,7 +324,7 @@ def callback_inline(call):
         course = call.data[0]
 
         markup = types.InlineKeyboardMarkup()
-        for i in [i for i in for_json.groups_in_json() if i[0] == course]:
+        for i in [i for i in db.groups_in_json() if i[0] == course]:
             markup.add(types.InlineKeyboardButton(text=i, callback_data=i))
 
         markup.add(
@@ -368,14 +354,15 @@ def callback_inline(call):
         call.data,
     ]
 
-    for_json.save_user(infos)
+    db.save_user(infos)
 
     if call.data == "other":
         bot.edit_message_text(
             chat_id=call.message.chat.id,
             message_id=call.message.message_id,
-            text="Используй команду /request и напиши номер группы, которую хочешь добавить\
-                                  \nПосле создания расписания для твоей группы, я пришлю тебе сообщение",
+            text=f"Пожалуйста, проверь расписание для своей группы в <a href='https://docs.google.com/spreadsheets/d/{os.environ.get('TABLE_ID')}/edit?usp=sharing'>этой таблице</a>",
+            # text="Используй команду /request и напиши номер группы, которую хочешь добавить\
+            #                       \nПосле создания расписания для твоей группы, я пришлю тебе сообщение",
             parse_mode=ParseMode.HTML,
         )
     else:
@@ -396,7 +383,7 @@ def send_schedule(message):
     )
     try:
         day = datetime.today().strftime("%A").lower()[:3]  # mon tue ...
-        text = for_json.get_schedule(message.chat.id, day)
+        text = db.get_schedule(message.chat.id, day)
     except Exception as e:
         # send_admin_message(
         #     "Schedule error from: {} \n\n {}".format(message.chat.id, str(e))
@@ -437,7 +424,7 @@ def change_schedule(call):
     delta = (1) if (call.data == "right") else (-1)
     ind = ((i + delta) % 6) if (i + delta > 0) else (i + delta)
 
-    text = for_json.get_schedule(call.message.chat.id, days[ind])
+    text = db.get_schedule(call.message.chat.id, days[ind])
 
     markup = types.InlineKeyboardMarkup()
     markup.add(
@@ -456,73 +443,13 @@ def change_schedule(call):
     return
 
 
-@bot.message_handler(commands=["random"])
-def random_people(message):
-    list_of_num = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6", "7", "8", "9"]
-
-    list_of_var = for_json.students_in_json(message.chat.id)
-
-    text = "Для вашей группы эта команда не настроена.\n\nНапиши запрос через /request"
-
-    if list_of_var == None:
-        send_message(message.chat.id, text)
-        send_admin_message(
-            "Запрос на random команду от {}".format(
-                for_json.return_infos(message.chat.id)["group"]
-            )
-        )
-
-        return
-
-    text = "• Выбери как именно мне перемешать вас:\n"
-
-    l = []
-    for i, val in enumerate(list_of_var):
-        text += "\n{} {}".format(list_of_num[i], val)
-        l.append(
-            types.InlineKeyboardButton(text=list_of_num[i], callback_data="rand#" + val)
-        )
-
-    l = [l]
-
-    markup = types.InlineKeyboardMarkup(l)
-    bot.send_message(message.chat.id, text, ParseMode.HTML, reply_markup=markup)
-
-    return
-
-
-@bot.callback_query_handler(func=lambda call: "rand#" in call.data)
-def make_random(call):
-    list_of_stud = for_json.students_in_json(
-        call.message.chat.id, call.data.split("#")[1]
-    )
-
-    random.shuffle(list_of_stud)
-
-    text = "<b><u>{}</u></b>:\n\n".format(call.data.split("#")[1])
-
-    for i, name in enumerate(list_of_stud):
-        text += "<code>{}{}</code>. {}\n".format(" " if i + 1 < 10 else "", i + 1, name)
-
-    bot.edit_message_text(
-        "Хорошо, вот ваше распределение!",
-        call.message.chat.id,
-        call.message.message_id,
-        parse_mode=ParseMode.HTML,
-    )
-
-    send_message(call.message.chat.id, text)
-
-    return
-
-
 @bot.message_handler(commands=["info"])
 def send_info(message):
     if len(message.text.split(" ")) == 2 and is_admin(message):
         send_admin_message(
             "Окей, держи настройки <code>{}</code>".format(message.text.split(" ")[1])
         )
-        infos = for_json.return_infos(message.text.split(" ")[1])
+        infos = db.return_infos(message.text.split(" ")[1])
         text = "<i>Никнейм</i>: <b>@{}</b>\
         \n<i>Имя</i>: <b>{} {}</b>\
         \n<i>Выбранная группа</i>: <b>{}</b>\
@@ -539,7 +466,7 @@ def send_info(message):
         return
 
     send_message(message.chat.id, "Хорошо, вот твои настройки:")
-    infos = for_json.return_infos(message.chat.id)
+    infos = db.return_infos(message.chat.id)
     text = "<i>Выбранная группа</i>: <b>{}</b>\
         \n<i>Время напоминания до урока</i>: <b>{}</b>\
         \n<i>Разрешены ли напоминания</i>: <b>{}</b>".format(
@@ -554,17 +481,17 @@ def send_info(message):
 
 @bot.message_handler(commands=["pause"])
 def pause_schedule(message):
-    infos = for_json.return_infos(message.chat.id)["allow_message"]
+    infos = db.return_infos(message.chat.id)["allow_message"]
 
-    if infos == "yes":
-        for_json.change_user_param(str(message.chat.id), "allow_message", "no")
+    if infos == True:
+        db.change_user_param(str(message.chat.id), "allow_message", False)
         send_message(
             message.chat.id,
             "Рассылка сообщений прекращена. \
             \nДля возобновления воспользуйтесь командой\n/pause",
         )
     else:
-        for_json.change_user_param(str(message.chat.id), "allow_message", "yes")
+        db.change_user_param(str(message.chat.id), "allow_message", True)
         send_message(message.chat.id, "Рассылка сообщений возоблена!")
 
     return
@@ -579,7 +506,7 @@ def change_thread(message):
     except AttributeError:
         thread_id = "General"
 
-    for_json.change_user_param(str(message.chat.id), "thread", thread_id)
+    db.change_user_param(str(message.chat.id), "thread", thread_id)
 
     send_message(
         message.chat.id,
@@ -608,7 +535,7 @@ def save_timeout(message):
         and int(message.text) <= 59
         and int(message.text) >= 1
     ):
-        for_json.change_user_param(message.chat.id, "timeout", str(message.text))
+        db.change_user_param(message.chat.id, "timeout", str(message.text))
         send_message(
             message.chat.id,
             "Хорошо, теперь ты будешь получать напоминания за {} минут до урока".format(
@@ -693,9 +620,10 @@ def send_message(id, text, thread_id="General", parity=None):
     if thread_id == "General":
         thread_id = None
 
-    if parity:
+    if parity and parity != "-":
+        parity = 0 if parity == "чёт" else 1 if parity == "нечёт" else None
         count_of_weeks = (datetime.now() - datetime(2024, 2, 5)).days // 7
-        is_odd = (count_of_weeks + 1) % 2 == parity_FIRST
+        is_odd = (count_of_weeks + 1) % 2 == PARITY_FIRST
 
         if is_odd != bool(parity):
             return
@@ -720,7 +648,7 @@ def send_message(id, text, thread_id="General", parity=None):
             )
         except Exception as e:
             text_error = "Error from user: @{} <code>{}</code>\n{}".format(
-                for_json.return_infos(id)["username"], id, str(e)
+                db.return_infos(id)["username"], id, str(e)
             )
             # send_admin_message(text_error)
             print(f"--- {text_error} ---")
@@ -744,7 +672,7 @@ def send_document(id, file, text=""):
 
 
 if __name__ == "__main__":
-    for_json.create_schedule_tasks(True)
+    db.create_schedule_tasks(True)
 
     send_admin_message("Я перезапустился!")
     print("-------------------------")
@@ -752,6 +680,11 @@ if __name__ == "__main__":
     threading.Thread(
         target=bot.infinity_polling, name="bot_infinity_polling", daemon=True
     ).start()
+
+    def run_script():
+        os.system("python3 -u upload_sql.py")
+
+    schedule.every(6).minutes.do(run_script)
 
     while True:
         try:
