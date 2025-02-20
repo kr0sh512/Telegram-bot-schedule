@@ -10,7 +10,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-bot = telebot.TeleBot(os.environ.get("TG_TEST_TOKEN"), parse_mode=ParseMode.HTML)
+bot = telebot.TeleBot(
+    (
+        os.environ.get("TG_TEST_TOKEN")
+        if os.environ.get("ENV") == "dev"
+        else os.environ.get("TG_API_TOKEN")
+    ),
+    parse_mode=ParseMode.HTML,
+)
 
 PARITY_FIRST = 0
 
@@ -476,15 +483,15 @@ def send_info(message):
 def pause_schedule(message):
     infos = db.return_infos(message.chat.id)["allow_message"]
 
-    if infos == "yes":
-        db.change_user_param(str(message.chat.id), "allow_message", "no")
+    if infos == True:
+        db.change_user_param(str(message.chat.id), "allow_message", False)
         send_message(
             message.chat.id,
             "Рассылка сообщений прекращена. \
             \nДля возобновления воспользуйтесь командой\n/pause",
         )
     else:
-        db.change_user_param(str(message.chat.id), "allow_message", "yes")
+        db.change_user_param(str(message.chat.id), "allow_message", True)
         send_message(message.chat.id, "Рассылка сообщений возоблена!")
 
     return
@@ -614,7 +621,7 @@ def send_message(id, text, thread_id="General", parity=None):
         thread_id = None
 
     if parity and parity != "-":
-        parity = int(parity)
+        parity = 0 if parity == "чёт" else 1 if parity == "нечёт" else None
         count_of_weeks = (datetime.now() - datetime(2024, 2, 5)).days // 7
         is_odd = (count_of_weeks + 1) % 2 == PARITY_FIRST
 
@@ -673,6 +680,11 @@ if __name__ == "__main__":
     threading.Thread(
         target=bot.infinity_polling, name="bot_infinity_polling", daemon=True
     ).start()
+
+    def run_script():
+        os.system("python3 -u upload_sql.py")
+
+    schedule.every(6).minutes.do(run_script)
 
     while True:
         try:

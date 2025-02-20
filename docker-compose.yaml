@@ -6,14 +6,20 @@ services:
     container_name: schedule_bot
     environment:
       - ENV=production
+      - TZ=Europe/Moscow
     restart: unless-stopped
     networks:
       - postgres_postgres
+    volumes:
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
     deploy:
       resources:
         limits:
           cpus: '0.3'
-          memory: 200M
+          memory: 300M        # Set a hard memory limit
+        reservations:
+          memory: 200M         # Reserve a soft memory limit
 
 networks:
   postgres_postgres:

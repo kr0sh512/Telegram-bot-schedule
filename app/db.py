@@ -1,11 +1,12 @@
 #!/usr/bin/python3.3
-import json, yaml, schedule
+import schedule
 import schedules as bot
 from datetime import datetime
 import os
 from dotenv import load_dotenv
 from sshtunnel import SSHTunnelForwarder
 from psycopg2 import pool
+from typing import Optional, Dict
 
 
 allow_update = True
@@ -107,11 +108,12 @@ def parse_lesson(lesson: dict[str, str]) -> str:
     if lesson["lector"]:
         if "/" not in lesson["lector"]:
             text = "{}-{} | {}\
-                    \n<b>{}</b>\
+                    \n{}<b>{}</b>\
                     \n<i>{}</i>".format(
                 start,
                 end,
                 lesson["room"],
+                "🎓 " if lesson["is_lecture"] else "",
                 lesson["course"],
                 lesson["lector"],
             )
@@ -119,7 +121,8 @@ def parse_lesson(lesson: dict[str, str]) -> str:
             lectors = lesson["lector"].split("/")
             text = "{}-{} | {}\
                     \n<b>{}</b>\
-                    \n<i>{}</i> / <i>{}</i>".format(
+                    \n<i>{}</i>\
+                    \n<i>{}</i>".format(
                 start,
                 end,
                 lesson["room"].replace("/", ", "),
@@ -129,11 +132,14 @@ def parse_lesson(lesson: dict[str, str]) -> str:
             )
     else:
         text = "{}-{}\
-                \n<b>{}</b>".format(
+                \n{}<b>{}</b>".format(
             start,
             end,
+            "🎓 " if lesson["is_lecture"] else "",
             lesson["course"],
         )
+
+        # text += f"\n{lesson['info']}"
 
     return text
 
@@ -148,6 +154,12 @@ def create_schedule_tasks(manual=False):
     allow_update = True
 
     schedule.clear()
+
+    def run_script():
+        os.system("python3 -u upload_sql.py")
+
+    schedule.every(6).minutes.do(run_script)
+
     conn = db.getconn()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM users")
@@ -155,7 +167,7 @@ def create_schedule_tasks(manual=False):
     users = into_list(data, cursor.description)
 
     for user in users:
-        if user["allow_message"] != "yes":
+        if not user["allow_message"]:
             continue
         group = user["group"]
         if group == "other":
@@ -179,7 +191,7 @@ def create_schedule_tasks(manual=False):
 
             thread_id = user["thread"]
 
-            delta = "00:" + user["timeout"]
+            delta = "00:" + str(user["timeout"])
             format = "%H:%M"
             start_task = datetime.strptime(start, format) - datetime.strptime(
                 delta, format
@@ -243,7 +255,7 @@ def students_in_group(group) -> list[str]:
     return students
 
 
-def return_infos(id) -> dict[str, str] | None:
+def return_infos(id) -> Optional[Dict[str, str]]:
     conn = db.getconn()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM users WHERE id = %s", (id,))
@@ -259,6 +271,12 @@ def pause_bot():
 
     if allow_update:
         schedule.clear()
+
+        def run_script():
+            os.system("python3 -u upload_sql.py")
+
+        schedule.every(6).minutes.do(run_script)
+
         allow_update = False
         bot.send_admin_message("Бот больше не отправляет расписание")
     else:
