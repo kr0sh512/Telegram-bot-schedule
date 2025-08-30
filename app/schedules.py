@@ -302,8 +302,8 @@ def start(message):
     #     markup.add(types.InlineKeyboardButton(text=i, callback_data=i))
     markup.add(types.InlineKeyboardButton(text="1 курс", callback_data="1course"))
     markup.add(types.InlineKeyboardButton(text="2 курс", callback_data="2course"))
-    markup.add(types.InlineKeyboardButton(text="3 курс", callback_data="2course"))
-    markup.add(types.InlineKeyboardButton(text="4 курс", callback_data="2course"))
+    markup.add(types.InlineKeyboardButton(text="3 курс", callback_data="3course"))
+    markup.add(types.InlineKeyboardButton(text="4 курс", callback_data="4course"))
 
     bot.send_message(
         message.chat.id,
