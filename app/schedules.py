@@ -317,7 +317,7 @@ def start(message):
 
 @bot.callback_query_handler(
     func=lambda call: call.data in db.groups_in_json()
-    or call.data in ["other", "1course", "2course"]
+    or call.data in ["other", "1course", "2course", "3course", "4course"]
 )
 def callback_inline(call):
     if "course" in call.data:
