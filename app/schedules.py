@@ -302,8 +302,10 @@ def start(message):
     #     markup.add(types.InlineKeyboardButton(text=i, callback_data=i))
     markup.add(types.InlineKeyboardButton(text="1 курс", callback_data="1course"))
     markup.add(types.InlineKeyboardButton(text="2 курс", callback_data="2course"))
-    markup.add(types.InlineKeyboardButton(text="3 курс", callback_data="2course"))
-    markup.add(types.InlineKeyboardButton(text="4 курс", callback_data="2course"))
+    markup.add(types.InlineKeyboardButton(text="3 курс", callback_data="3course"))
+    markup.add(types.InlineKeyboardButton(text="4 курс", callback_data="4course"))
+    markup.add(types.InlineKeyboardButton(text="5 курс", callback_data="5course"))
+    markup.add(types.InlineKeyboardButton(text="6 курс", callback_data="6course"))
 
     bot.send_message(
         message.chat.id,
@@ -317,7 +319,7 @@ def start(message):
 
 @bot.callback_query_handler(
     func=lambda call: call.data in db.groups_in_json()
-    or call.data in ["other", "1course", "2course"]
+    or call.data in ["other", "1course", "2course", "3course", "4course", "5course", "6course"]
 )
 def callback_inline(call):
     if "course" in call.data:
