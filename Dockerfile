@@ -4,6 +4,8 @@ RUN apt-get update && apt-get install -y cron
 
 WORKDIR /app
 
+# anyway copy make pip install again
+
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
